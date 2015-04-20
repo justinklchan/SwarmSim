@@ -7,8 +7,14 @@ package swarm;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.util.LinkedList;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
+import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Random;
+import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 /**
@@ -66,16 +72,18 @@ public class Swarm extends javax.swing.JFrame {
     {
         int RAND_SEED = 20;
         Random random;
-        int nBots = 40;
-        LinkedList<Bot> bots;
         boolean spawned = false;
-        int botSize = 10;
+        
+        int nBots = 1000;
+        int botSize = 5;
+        int[][] img;
         
         public SimPanel()
         {
             super();
             random = new Random(RAND_SEED);
-            bots = new LinkedList<Bot>();
+            Sensors.bots = new ArrayList<Bot>(nBots);
+            Sensors.botCoords = new ArrayList<Point2D>(nBots);
         }
         
         @Override
@@ -83,24 +91,178 @@ public class Swarm extends javax.swing.JFrame {
             super.paintComponent(g);
             if(!spawned)
             {
-                int x=0;
-                int y=0;
+                int x=5;
+                int y=5;
                 int w=100;
                 int h=100;
-                packSpawnInArea(x, y, w, h);
-                g.drawRect(x, y, w, h);
+                img = readShape(.5,.5,110,0);
+                packSpawnInArea(x, y, w, h, img);
+                setSeed(105,95);
                 spawned = true;
             }
             
-            g.setColor(Color.black);
-            for(Bot bot : bots)
+            drawShape(g,img);
+            drawBots(g);
+        }
+        
+        //we set 4 seeds, one is the gradient seed
+        public void setSeed(int x, int y)
+        {
+            for(int i = 105; i <= 110; i += 5)
             {
-                g.drawOval((int)bot.x, (int)bot.y, bot.size, bot.size);
+                for(int j = 95; j <= 100; j += 5)
+                {
+                    Sensors.botCoords.add(new Point2D.Double(i,j));
+                    System.out.println(i+","+j);
+                    Bot bot = new Bot(img);
+                    bot.seed = true;
+                    Sensors.bots.add(bot);
+                }
+            }
+            Sensors.bots.get(Sensors.bots.size()-1).gradientSeed = true;
+        }
+        
+        public void drawBots(Graphics g)
+        {
+            for(int i = 0; i < Sensors.bots.size(); i++)
+            {
+                if(Sensors.bots.get(i).gradientSeed)
+                {
+                    g.setColor(Color.blue);
+                }
+                else if(Sensors.bots.get(i).seed)
+                {
+                    g.setColor(Color.red);
+                }
+                else
+                {
+                    g.setColor(Color.black);
+                }
+                g.drawOval((int)Sensors.botCoords.get(i).getX(), (int)Sensors.botCoords.get(i).getY(), botSize, botSize);
             }
         }
         
+        //draw shape
+        public void drawShape(Graphics g, int[][] shape)
+        {
+            g.setColor(Color.black);
+            for(int i = 0; i < shape.length; i++)
+            {
+                for(int j = 0; j < shape[i].length; j++)
+                {
+                    if(shape[i][j] == 0)
+                    {
+                        g.drawOval(j, i, 1, 1);
+                    }
+                }
+            }
+        }
+        
+        public void translate(int[][] shape, int tx, int ty)
+        {
+            if(tx > 0)
+            {
+                //for every row
+                for(int i = 0; i < shape.length; i++)
+                {
+                    for(int j = shape[i].length-1-tx; j >= 0; j--)
+                    {
+                        //shift elements in y direction
+                        shape[i][j+tx] = shape[i][j];
+                        shape[i][j] = 1;
+                    }
+                }
+            }
+            
+            if(ty > 0)
+            {
+                //for every row
+                for(int i = shape.length-1; i >= ty; i--)
+                {
+                    for(int j = 0; j < shape[i].length; j++)
+                    {
+                        shape[i][j] = shape[i-ty][j];
+                        shape[i-ty][j] = 1;
+                    }
+                }
+            }
+        }
+        
+        //reads shape from file as bufferedimage, stored as int[][]
+        //image can be scaled by sx/sy
+        //image can be translated by tx/ty
+        //array is 0 for black, 1 for white
+        public int[][] readShape(double sx, double sy, int tx, int ty)
+        {
+            BufferedImage img = null;
+            try
+            {
+                img = ImageIO.read(new File("shape.bmp"));
+                img = scale(img,sx,sy);
+            }
+            catch(Exception e)
+            {
+                e.printStackTrace();
+            }
+            int[][] shape = new int[getHeight()][getWidth()];
+            for(int i = 0; i < shape.length; i++)
+            {
+                for(int j = 0; j < shape[i].length; j++)
+                {
+                    shape[i][j] = 1;
+                }
+            }
+            
+            //converting from bufferedimage to int[][]
+            for(int i = 0; i < img.getHeight(); i++)
+            {
+                for(int j = 0; j < img.getWidth(); j++)
+                {
+                    Color c = convertToColor(img.getRGB(i, j));
+                    if(c.equals(Color.black))
+                    {
+                        shape[j][i] = 0;
+                    }
+                }
+            }
+            translate(shape, tx, ty);
+            return shape;
+        }
+        
+        //scales image by a certain amount
+        //http://stackoverflow.com/questions/4216123/how-to-scale-a-bufferedimage
+        public BufferedImage scale(BufferedImage before, double sx, double sy)
+        {
+            int w = before.getWidth();
+            int h = before.getHeight();
+            BufferedImage after = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+            for(int i = 0; i < w; i++)
+            {
+                for(int j = 0; j < h; j++)
+                {
+                    after.setRGB(i, j, convertToRGB(Color.white));
+                }
+            }
+            AffineTransform at = new AffineTransform();
+            at.scale(sx, sy);
+            AffineTransformOp scaleOp = 
+               new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
+            after = scaleOp.filter(before, after);
+            return after;
+        }
+        
+        public int convertToRGB(Color c)
+        {
+            return ((c.getRed()&0x0ff)<<16)|((c.getGreen()&0x0ff)<<8)|(c.getBlue()&0x0ff);
+        }
+        
+        public Color convertToColor(int c)
+        {
+            return new Color(c);
+        }
+        
         //pack bots in a given area
-        public void packSpawnInArea(int x, int y, int width, int height)
+        public void packSpawnInArea(int x, int y, int width, int height, int[][] imgRep)
         {
             int xTimes = width/botSize;
             int yTimes = height/botSize;
@@ -109,70 +271,9 @@ public class Swarm extends javax.swing.JFrame {
             {
                 for(int j = 0; j < yTimes; j++)
                 {
-                    bots.add(new Bot(x+botSize*i,y+botSize*j,botSize));
+                    Sensors.bots.add(new Bot(imgRep));
+                    Sensors.botCoords.add(new Point2D.Double(x+botSize*i,y+botSize*j));
                 }
-            }
-            
-            nBots = bots.size();
-        }
-        
-        //randomly spawn in a given area
-        public void randomSpawnInArea(int x, int y, int width, int height)
-        {
-            int minX = x;
-            int maxX = x+width;
-            int minY = y;
-            int maxY = y+height;
-            long t1 = System.nanoTime();
-            boolean timeout = false;
-            
-            for(int i = 0; i < nBots; i++)
-            {
-                Bot bot = new Bot(
-                            minX+random.nextInt(maxX-botSize),
-                            minY+random.nextInt(maxY-botSize),
-                            botSize);
-                
-                while(bot.overlaps(bots))
-                {
-                    if(System.nanoTime()-t1 >= 1000000000)
-                    {
-                        timeout = true;
-                        break;
-                    }
-                    bot = new Bot(
-                            minX+random.nextInt(maxX-botSize),
-                            minY+random.nextInt(maxY-botSize),
-                            botSize);
-                }
-                if(timeout)
-                {
-                    break;
-                }
-                
-                bots.add(bot);
-            }
-        }
-        
-        //randomly spawn around canvas
-        public void randomSpawn()
-        {
-            for(int i = 0; i < nBots; i++)
-            {
-                Bot bot = new Bot(
-                            random.nextInt(getWidth()-botSize),
-                            random.nextInt(getHeight()-botSize),
-                            botSize);
-                
-                while(bot.overlaps(bots))
-                {
-                    bot = new Bot(
-                            random.nextInt(getWidth()-botSize),
-                            random.nextInt(getHeight()-botSize),
-                            botSize);
-                }
-                
-                bots.add(bot);
             }
         }
     }
