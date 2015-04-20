@@ -32,15 +32,15 @@ public class Bot implements Runnable {
     boolean stationary = true;
     boolean localized;
     
-    boolean stopLocalization = false;
-    boolean stopGradientFormation = false;
-    boolean stopEdgeFollow = false;
-    boolean stopIdGen = false;
+    boolean stopLocalization;
+    boolean stopGradientFormation;
+    boolean stopEdgeFollow;
+    boolean stopIdGen;
     
-    boolean localizationStarted = false;
-    boolean gradientFormationStarted = false;
-    boolean idGenStarted = false;
-    boolean edgeFollowStarted = false;
+    boolean localizationStarted;
+    boolean gradientFormationStarted;
+    boolean idGenStarted;
+    boolean edgeFollowStarted;
    
     int id;
     
@@ -64,6 +64,15 @@ public class Bot implements Runnable {
             double prev = DISTANCE_MAX;
             while(!stopEdgeFollow)
             {
+                try
+                {
+                    Thread.sleep(1000);
+                }
+                catch(Exception e)
+                {
+                    e.printStackTrace();
+                }
+                
                 double current = DISTANCE_MAX;
                 ArrayList<Bot> neighbors = IO.getNeighbors(Bot.this);
                 for(Bot neighbor : neighbors)
@@ -80,11 +89,13 @@ public class Bot implements Runnable {
                     {
                         //move straight forward (to the right)
                         IO.move(Bot.this,1,0);
+                        System.out.println("m1");
                     }
                     else
                     {
                         //move forward and counterclockwise, straight and up
                         IO.move(Bot.this,1,-1);
+                        System.out.println("m2");
                     }
                 }
                 else
@@ -93,11 +104,13 @@ public class Bot implements Runnable {
                     {
                         //move straight forward
                         IO.move(Bot.this,1,0);
+                        System.out.println("m3");
                     }
                     else
                     {
                         //move forward and clockwise
                         IO.move(Bot.this,1,1);
+                        System.out.println("m4");
                     }
                 }
                 prev = current;
@@ -165,6 +178,7 @@ public class Bot implements Runnable {
                 }
                 if(has3CollinearBots(nList))
                 {
+                    System.out.println("localizing");
                     for(Bot bot : nList)
                     {
                         double c = position.distance(bot.position);
@@ -176,8 +190,8 @@ public class Bot implements Runnable {
                         double measuredDist = IO.measuredDistance(Bot.this,bot);
                         Point2D n = new Point2D.Double(bot.position.getX()+measuredDist*v.getX(),
                                                        bot.position.getY()+measuredDist*v.getY());
-                        position = new Point2D.Double(position.getX()-(position.getX()-bot.position.getX())/4,
-                                                      position.getY()-(position.getY()-bot.position.getY())/4);
+                        position = new Point2D.Double(position.getX()-(position.getX()-n.getX())/4,
+                                                      position.getY()-(position.getY()-n.getY())/4);
                     }
                 }
             }
@@ -254,7 +268,6 @@ public class Bot implements Runnable {
         
         public void run()
         {
-            System.out.println("gen id "+seqNum);
             while(!stopIdGen)
             {
                 if(!idGenerated)
@@ -283,6 +296,16 @@ public class Bot implements Runnable {
     
     public void run()
     {
+        stopLocalization = false;
+        stopGradientFormation = false;
+        stopEdgeFollow = false;
+        stopIdGen = false;
+
+        localizationStarted = false;
+        gradientFormationStarted = false;
+        idGenStarted = false;
+        edgeFollowStarted = false;
+        
         int startupTime = 1;
         int yieldDistance = 15;
 
@@ -294,7 +317,7 @@ public class Bot implements Runnable {
         stationary = true;
         State state = State.START;
         int timer = 0;
-
+        
         try
         {
             while(true)
@@ -386,6 +409,8 @@ public class Bot implements Runnable {
                     {
                         state = State.MOVE_WHILE_INSIDE;
                     }
+                    
+                    //TODO
     //                if( > yieldDistance)
     //                {
                         stopEdgeFollow = false;
@@ -417,6 +442,7 @@ public class Bot implements Runnable {
                     {
                         state = State.JOINED_SHAPE;
                     }
+                    //TODO
     //                if( > yieldDistance)
     //                {
                         stopEdgeFollow = false;

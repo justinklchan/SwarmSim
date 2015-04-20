@@ -83,7 +83,7 @@ public class Swarm extends javax.swing.JFrame {
         int[][] img;
         
         Timer timer;
-        Thread[] botThreads;
+        ArrayList<Thread> botThreads;
         
         public SimPanel()
         {
@@ -91,8 +91,8 @@ public class Swarm extends javax.swing.JFrame {
             random = new Random(RAND_SEED);
             IO.bots = new ArrayList<Bot>(nBots);
             IO.botCoords = new HashMap<Bot,Point2D>(nBots);
-            botThreads = new Thread[nBots];
-            timer = new Timer(2000, taskPerformer);
+            botThreads = new ArrayList<Thread>(nBots);
+            timer = new Timer(1000, taskPerformer);
             timer.start();
         }
         
@@ -127,8 +127,9 @@ public class Swarm extends javax.swing.JFrame {
                 for(Bot bot : IO.bots)
                 {
                     bot.seqNum = i;
-                    botThreads[i] = new Thread(bot);
-                    botThreads[i].start();
+                    Thread t = new Thread(bot);
+                    botThreads.add(t);
+                    t.start();
                     i += 1;
                 }
                 spawned = true;
@@ -154,7 +155,8 @@ public class Swarm extends javax.swing.JFrame {
             IO.bots.get(IO.bots.size()-1).gradientSeed = true;
         }
         
-        public synchronized void drawBots(Graphics g)
+        //TODO: this method should be synchronized
+        public void drawBots(Graphics g)
         {
             for(Bot bot : IO.bots)
             {
@@ -169,22 +171,22 @@ public class Swarm extends javax.swing.JFrame {
                 else
                 {
                     //bots get redder, the nearer they are to the gradient seed
-                    int maxGradientValue = 0;
-                    for(Bot b : IO.bots)
-                    {
-                        if(b.gradientValue > maxGradientValue)
-                        {
-                            maxGradientValue = b.gradientValue;
-                        }
-                    }
-                    
-                    int cVal = 0;
-                    if(maxGradientValue != 0)
-                    {
-                        cVal = 255-((bot.gradientValue/maxGradientValue)*255);
-                    }
-                    System.out.println(bot.gradientValue+","+maxGradientValue+","+cVal);
-                    g.setColor(new Color(cVal,0,0));
+//                    int maxGradientValue = 0;
+//                    for(Bot b : IO.bots)
+//                    {
+//                        if(b.gradientValue > maxGradientValue)
+//                        {
+//                            maxGradientValue = b.gradientValue;
+//                        }
+//                    }
+//                    
+//                    int cVal = 0;
+//                    if(maxGradientValue != 0)
+//                    {
+//                        cVal = 255-((bot.gradientValue/maxGradientValue)*255);
+//                    }
+//                    System.out.println(bot.gradientValue+","+maxGradientValue+","+cVal);
+                    g.setColor(new Color(255,0,0));
                 }
                 g.drawOval((int)IO.botCoords.get(bot).getX(), (int)IO.botCoords.get(bot).getY(), botSize, botSize);
             }

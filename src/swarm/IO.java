@@ -68,6 +68,8 @@ public class IO {
     public static void move(Bot bot, int dx, int dy)
     {
         Point2D coords = botCoords.get(bot);
-        
+//        System.out.println(coords.getX()+","+coords.getY());
+        coords.setLocation(coords.getX()+dx,coords.getY()+dy);
+//        System.out.println("=>"+coords.getX()+","+coords.getY());
     }
 }
