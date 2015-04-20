@@ -107,22 +107,27 @@ public class Swarm extends javax.swing.JFrame {
             super.paintComponent(g);
             if(!spawned)
             {
-                //advanced test
+                //advanced test (400) 
 //                int x=5;
 //                int y=5;
 //                int w=100;
 //                int h=100;
                 
-                //simple test
+                //medium test (9)
+//                int x=90;
+//                int y=90;
+//                int w=15;
+//                int h=15;
+                
+                //simple test (1)
                 int x=100;
                 int y=100;
                 int w=5;
                 int h=5;
                 
-                img = readShape(.5,.5,110,0);
-                packSpawnInArea(x, y, w, h, img);
-                
+                img = readShape(1,1);
                 setSeed(105,95);
+                packSpawnInArea(x, y, w, h, img);
                 int i = 0;
                 for(Bot bot : IO.bots)
                 {
@@ -132,10 +137,11 @@ public class Swarm extends javax.swing.JFrame {
                     t.start();
                     i += 1;
                 }
+                
                 spawned = true;
             }
             
-            drawShape(g,img);
+            drawShape(g,img,110,0);
             drawBots(g);
         }
         
@@ -147,8 +153,12 @@ public class Swarm extends javax.swing.JFrame {
                 for(int j = 95; j <= 100; j += 5)
                 {
                     Bot bot = new Bot(img);
+                    //this is the global coordinates
                     IO.botCoords.put(bot,new Point2D.Double(i,j));
                     bot.seed = true;
+                    bot.localized = true;
+                    //position is relative to the image
+                    bot.position = new Point2D.Double(0,img.length);
                     IO.bots.add(bot);
                 }
             }
@@ -193,7 +203,7 @@ public class Swarm extends javax.swing.JFrame {
         }
         
         //draw shape
-        public void drawShape(Graphics g, int[][] shape)
+        public void drawShape(Graphics g, int[][] shape, int tx, int ty)
         {
             g.setColor(Color.black);
             for(int i = 0; i < shape.length; i++)
@@ -202,7 +212,7 @@ public class Swarm extends javax.swing.JFrame {
                 {
                     if(shape[i][j] == 0)
                     {
-                        g.drawOval(j, i, 1, 1);
+                        g.drawOval(j+tx, i+ty, 1, 1);
                     }
                 }
             }
@@ -242,40 +252,39 @@ public class Swarm extends javax.swing.JFrame {
         //image can be scaled by sx/sy
         //image can be translated by tx/ty
         //array is 0 for black, 1 for white
-        public int[][] readShape(double sx, double sy, int tx, int ty)
+        public int[][] readShape(double sx, double sy)
         {
-            BufferedImage img = null;
+            BufferedImage image = null;
             try
             {
-                img = ImageIO.read(new File("shape.bmp"));
-                img = scale(img,sx,sy);
+                image = ImageIO.read(new File("shape.bmp"));
+                image = scale(image,sx,sy);
             }
             catch(Exception e)
             {
                 e.printStackTrace();
             }
-            int[][] shape = new int[getHeight()][getWidth()];
-            for(int i = 0; i < shape.length; i++)
+            int[][] shape = new int[image.getHeight()][image.getWidth()];
+            for(int i = 0; i < image.getHeight(); i++)
             {
-                for(int j = 0; j < shape[i].length; j++)
+                for(int j = 0; j < image.getWidth(); j++)
                 {
                     shape[i][j] = 1;
                 }
             }
             
             //converting from bufferedimage to int[][]
-            for(int i = 0; i < img.getHeight(); i++)
+            for(int i = 0; i < image.getHeight(); i++)
             {
-                for(int j = 0; j < img.getWidth(); j++)
+                for(int j = 0; j < image.getWidth(); j++)
                 {
-                    Color c = convertToColor(img.getRGB(i, j));
+                    Color c = convertToColor(image.getRGB(i, j));
                     if(c.equals(Color.black))
                     {
                         shape[j][i] = 0;
                     }
                 }
             }
-            translate(shape, tx, ty);
             return shape;
         }
         

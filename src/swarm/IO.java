@@ -64,7 +64,7 @@ public class IO {
         return minBot;
     }
     
-    //theta in degrees
+    
     public static void move(Bot bot, int dx, int dy)
     {
         Point2D coords = botCoords.get(bot);

@@ -64,15 +64,7 @@ public class Bot implements Runnable {
             double prev = DISTANCE_MAX;
             while(!stopEdgeFollow)
             {
-                try
-                {
-                    Thread.sleep(1000);
-                }
-                catch(Exception e)
-                {
-                    e.printStackTrace();
-                }
-                
+                delay();
                 double current = DISTANCE_MAX;
                 ArrayList<Bot> neighbors = IO.getNeighbors(Bot.this);
                 for(Bot neighbor : neighbors)
@@ -89,13 +81,15 @@ public class Bot implements Runnable {
                     {
                         //move straight forward (to the right)
                         IO.move(Bot.this,1,0);
-                        System.out.println("m1");
+//                        position.setLocation(position.getX()+1, position.getY());
+//                        System.out.println("m1");
                     }
                     else
                     {
                         //move forward and counterclockwise, straight and up
                         IO.move(Bot.this,1,-1);
-                        System.out.println("m2");
+//                        position.setLocation(position.getX()+1, position.getY()-1);
+//                        System.out.println("m2");
                     }
                 }
                 else
@@ -104,16 +98,19 @@ public class Bot implements Runnable {
                     {
                         //move straight forward
                         IO.move(Bot.this,1,0);
-                        System.out.println("m3");
+//                        position.setLocation(position.getX()+1, position.getY());
+//                        System.out.println("m3");
                     }
                     else
                     {
                         //move forward and clockwise
                         IO.move(Bot.this,1,1);
-                        System.out.println("m4");
+//                        position.setLocation(position.getX()+1, position.getY()+1);
+//                        System.out.println("m4");
                     }
                 }
                 prev = current;
+                delay();
             }
         }
     }
@@ -149,8 +146,8 @@ public class Bot implements Runnable {
                         }
                     }
                     gradientValue += 1;
-                    //transmit our gradient value
                 }
+                delay();
             }
         }
     }
@@ -159,7 +156,6 @@ public class Bot implements Runnable {
     {
         public void run()
         {
-            System.out.println("localization "+seqNum);
             if(!seed)
             {
                 position = new Point2D.Double(0, 0);
@@ -178,11 +174,13 @@ public class Bot implements Runnable {
                 }
                 if(has3CollinearBots(nList))
                 {
-                    System.out.println("localizing");
                     for(Bot bot : nList)
                     {
                         double c = position.distance(bot.position);
-
+//                        if(c == 0)
+//                        {
+//                            c = 1;
+//                        }
                         //this is a vector
                         Point2D v = new Point2D.Double(
                                        (position.getX()-bot.position.getX())/c,
@@ -192,8 +190,10 @@ public class Bot implements Runnable {
                                                        bot.position.getY()+measuredDist*v.getY());
                         position = new Point2D.Double(position.getX()-(position.getX()-n.getX())/4,
                                                       position.getY()-(position.getY()-n.getY())/4);
+//                        System.out.println("localized "+position.getX()+","+position.getY());
                     }
                 }
+                delay();
             }
         }
         
@@ -221,7 +221,7 @@ public class Bot implements Runnable {
             getSubsets(superSet, k, 0, new HashSet<Integer>(), res);
             return res;
         }
-
+        
         public boolean has3CollinearBots(ArrayList<Bot> nList)
         {
             //get all subsets of size 3 for [0...nList.size()]
@@ -246,7 +246,7 @@ public class Bot implements Runnable {
 
             for(Set<Bot> set : botSubsets)
             {   
-                Bot[] bots = (Bot[])set.toArray();
+                Bot[] bots = set.toArray(new Bot[set.size()]);
                 if(isCollinear(bots[0].position,bots[1].position,bots[2].position))
                 {
                     return true;
@@ -290,7 +290,20 @@ public class Bot implements Runnable {
                         }
                     }
                 }
+                delay();
             }
+        }
+    }
+    
+    public void delay()
+    {
+        try
+        {
+            Thread.sleep(100);
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
         }
     }
     
@@ -324,12 +337,6 @@ public class Bot implements Runnable {
             {
                 if(state == State.START)
                 {
-                    if(!idGenStarted)
-                    {
-                        idGen = new Thread(new GenerateLocallyUniqueID());
-                        idGen.start();
-                        idGenStarted = true;
-                    }
                     if(seed)
                     {
                         state = State.JOINED_SHAPE;
@@ -349,6 +356,12 @@ public class Bot implements Runnable {
                             localization = new Thread(new Localization());
                             localization.start();
                             localizationStarted = true;
+                        }
+                        if(!idGenStarted)
+                        {
+                            idGen = new Thread(new GenerateLocallyUniqueID());
+                            idGen.start();
+                            idGenStarted = true;
                         }
                         timer += 1;
                         Thread.sleep(1000);
@@ -405,7 +418,8 @@ public class Bot implements Runnable {
                 }
                 else if(state == State.MOVE_WHILE_OUTSIDE)
                 {
-                    if(img[(int)position.getX()][(int)position.getY()] == 0)
+//                    System.out.println("outside");
+                    if(img[(int)position.getY()][(int)position.getX()] == 0)
                     {
                         state = State.MOVE_WHILE_INSIDE;
                     }
@@ -434,8 +448,11 @@ public class Bot implements Runnable {
                 }
                 else if(state == State.MOVE_WHILE_INSIDE)
                 {
-                    if(img[(int)position.getX()][(int)position.getY()] == 1)
-                    {
+//                    System.out.println("inside");
+                    System.out.println(img[(int)position.getY()][(int)position.getX()]);
+                    if(img[(int)position.getY()][(int)position.getX()] == 1)
+                    {   
+//                        System.out.println("JOINED SHAPE!!!!");
                         state = State.JOINED_SHAPE;
                     }
                     if(gradientValue <= IO.closestNeighbor(Bot.this).gradientValue)
@@ -486,6 +503,7 @@ public class Bot implements Runnable {
                     {
                         idGen.join();
                     }
+                    break;
                 }
             }
         }
@@ -493,5 +511,6 @@ public class Bot implements Runnable {
         {
             e.printStackTrace();
         }
+        System.out.println(seqNum + " ended");
     }
 }
