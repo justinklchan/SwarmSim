@@ -7,6 +7,8 @@ package swarm;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.AffineTransformOp;
@@ -17,6 +19,7 @@ import java.util.HashMap;
 import java.util.Random;
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
+import javax.swing.Timer;
 
 /**
  *
@@ -79,38 +82,56 @@ public class Swarm extends javax.swing.JFrame {
         int botSize = 5;
         int[][] img;
         
+        Timer timer;
+        Thread[] botThreads;
+        
         public SimPanel()
         {
             super();
             random = new Random(RAND_SEED);
             IO.bots = new ArrayList<Bot>(nBots);
             IO.botCoords = new HashMap<Bot,Point2D>(nBots);
+            botThreads = new Thread[nBots];
+            timer = new Timer(2000, taskPerformer);
+            timer.start();
         }
+        
+        ActionListener taskPerformer = new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                repaint();
+            }
+        };
         
         @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
             if(!spawned)
             {
-                int x=5;
-                int y=5;
-                int w=100;
-                int h=100;
+                //advanced test
+//                int x=5;
+//                int y=5;
+//                int w=100;
+//                int h=100;
+                
+                //simple test
+                int x=100;
+                int y=100;
+                int w=5;
+                int h=5;
+                
                 img = readShape(.5,.5,110,0);
                 packSpawnInArea(x, y, w, h, img);
+                
                 setSeed(105,95);
+                int i = 0;
+                for(Bot bot : IO.bots)
+                {
+                    bot.seqNum = i;
+                    botThreads[i] = new Thread(bot);
+                    botThreads[i].start();
+                    i += 1;
+                }
                 spawned = true;
-                try
-                {
-                    for(Bot bot : IO.bots)
-                    {
-                        bot.selfAssembly();
-                    }
-                }
-                catch(Exception e)
-                {
-                    e.printStackTrace();
-                }
             }
             
             drawShape(g,img);
@@ -133,15 +154,15 @@ public class Swarm extends javax.swing.JFrame {
             IO.bots.get(IO.bots.size()-1).gradientSeed = true;
         }
         
-        public void drawBots(Graphics g)
+        public synchronized void drawBots(Graphics g)
         {
-            for(int i = 0; i < IO.bots.size(); i++)
+            for(Bot bot : IO.bots)
             {
-                if(IO.bots.get(i).gradientSeed)
+                if(bot.gradientSeed)
                 {
                     g.setColor(Color.blue);
                 }
-                else if(IO.bots.get(i).seed)
+                else if(bot.seed)
                 {
                     g.setColor(Color.green);
                 }
@@ -149,17 +170,23 @@ public class Swarm extends javax.swing.JFrame {
                 {
                     //bots get redder, the nearer they are to the gradient seed
                     int maxGradientValue = 0;
-                    for(Bot bot : IO.bots)
+                    for(Bot b : IO.bots)
                     {
-                        if(bot.gradientValue > maxGradientValue)
+                        if(b.gradientValue > maxGradientValue)
                         {
-                            maxGradientValue = bot.gradientValue;
+                            maxGradientValue = b.gradientValue;
                         }
                     }
-                    int cVal = 255-IO.bots.get(i).gradientValue/maxGradientValue*255;
+                    
+                    int cVal = 0;
+                    if(maxGradientValue != 0)
+                    {
+                        cVal = 255-((bot.gradientValue/maxGradientValue)*255);
+                    }
+                    System.out.println(bot.gradientValue+","+maxGradientValue+","+cVal);
                     g.setColor(new Color(cVal,0,0));
                 }
-                g.drawOval((int)IO.botCoords.get(i).getX(), (int)IO.botCoords.get(i).getY(), botSize, botSize);
+                g.drawOval((int)IO.botCoords.get(bot).getX(), (int)IO.botCoords.get(bot).getY(), botSize, botSize);
             }
         }
         

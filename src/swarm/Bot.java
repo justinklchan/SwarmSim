@@ -11,7 +11,7 @@ import java.util.Set;
  *
  * @author chanjustin
  */
-public class Bot {
+public class Bot implements Runnable {
     
     public enum State {
         START,WAIT_TO_MOVE,MOVE_WHILE_OUTSIDE,
@@ -23,6 +23,7 @@ public class Bot {
     Point2D position;
     boolean seed = false;
     int[][] img;
+    int seqNum;
     
     boolean gradientSeed = false;
     int gradientValue;
@@ -34,14 +35,16 @@ public class Bot {
     boolean stopLocalization = false;
     boolean stopGradientFormation = false;
     boolean stopEdgeFollow = false;
-    boolean localizationStarted = true;
-    boolean gradientFormationStarted = true;
-    int startupTime = 60;
-    int yieldDistance = 15;
+    boolean stopIdGen = false;
     
+    boolean localizationStarted = false;
+    boolean gradientFormationStarted = false;
+    boolean idGenStarted = false;
+    boolean edgeFollowStarted = false;
+   
     int id;
     
-    public Bot(int[][] img)
+    public Bot(int[][] img) 
     {
         this.img = new int[img.length][];
         for(int i = 0; i < img.length; i++)
@@ -53,11 +56,11 @@ public class Bot {
     public class EdgeFollow implements Runnable
     {
         final int DISTANCE_MAX = 10;
-        final int DESIRED_DISTANCE = 5;
-        final int MOVEMENT_ANGLE = 45;
+        final int DESIRED_DISTANCE = 15;
         
         public void run()
         {
+            System.out.println("edge follow "+seqNum);
             double prev = DISTANCE_MAX;
             while(!stopEdgeFollow)
             {
@@ -75,13 +78,13 @@ public class Bot {
                 {
                     if(prev < current)
                     {
-                        //move straight forward
-                        IO.move(Bot.this,0);
+                        //move straight forward (to the right)
+                        IO.move(Bot.this,1,0);
                     }
                     else
                     {
-                        //move forward and counterclockwise
-                        IO.move(Bot.this,MOVEMENT_ANGLE);
+                        //move forward and counterclockwise, straight and up
+                        IO.move(Bot.this,1,-1);
                     }
                 }
                 else
@@ -89,12 +92,12 @@ public class Bot {
                     if(prev > current)
                     {
                         //move straight forward
-                        IO.move(Bot.this,0);
+                        IO.move(Bot.this,1,0);
                     }
                     else
                     {
                         //move forward and clockwise
-                        IO.move(Bot.this,-MOVEMENT_ANGLE);
+                        IO.move(Bot.this,1,1);
                     }
                 }
                 prev = current;
@@ -107,9 +110,10 @@ public class Bot {
         //gradient formation
         final int GRADIENT_MAX = 1000; //max gradient == maxbots
         final int G = 20;
-    
+        
         public void run()
         {
+            System.out.println("gradient formation "+seqNum);
             while(!stopGradientFormation)
             {
                 gradientFormationStarted = true;
@@ -142,9 +146,10 @@ public class Bot {
     {
         public void run()
         {
+            System.out.println("localization "+seqNum);
             if(!seed)
             {
-                position.setLocation(0, 0);
+                position = new Point2D.Double(0, 0);
             }
             while(!stopLocalization)
             {
@@ -243,164 +248,224 @@ public class Bot {
         return (p2.getY()-p1.getY())*(p1.getX()-p2.getX()) == (p3.getY()-p2.getY())*(p2.getX()-p1.getX());
     }
     
-    public void generateLocallyUniqueID()
+    public class GenerateLocallyUniqueID implements Runnable
     {
         boolean idGenerated = false;
-        while(true)
+        
+        public void run()
         {
-            if(!idGenerated)
+            System.out.println("gen id "+seqNum);
+            while(!stopIdGen)
             {
-                int randSeed = IO.getRandomSeed();
-                Random random = new Random(randSeed);
-                id = random.nextInt();
-            }
-            else
-            {
-                ArrayList<Bot> neighbors = IO.getNeighbors(this);
-                for(Bot bot : neighbors)
+                if(!idGenerated)
                 {
-                    if(id == bot.id)
+                    int randSeed = IO.getRandomSeed();
+                    Random random = new Random(randSeed);
+                    id = random.nextInt(10000);
+                    idGenerated = true;
+                    System.out.println("id: "+id);
+                }
+                else
+                {
+                    //detects if id is no longer locally unique
+                    ArrayList<Bot> neighbors = IO.getNeighbors(Bot.this);
+                    for(Bot bot : neighbors)
                     {
-                        idGenerated = false;
+                        if(id == bot.id)
+                        {
+                            idGenerated = false;
+                        }
                     }
                 }
             }
         }
     }
     
-    public void selfAssembly() throws Exception
+    public void run()
     {
-        stationary = true;
-        State state = State.START;
-        int timer = 0;
-        
+        int startupTime = 1;
+        int yieldDistance = 15;
+
         Thread edgeFollow = null;
         Thread gradientFormation = null;
         Thread localization = null;
-        
-        while(true)
+        Thread idGen = null;
+    
+        stationary = true;
+        State state = State.START;
+        int timer = 0;
+
+        try
         {
-            if(state == State.START)
+            while(true)
             {
-                if(seed)
+                if(state == State.START)
                 {
-                    state = State.JOINED_SHAPE;
+                    if(!idGenStarted)
+                    {
+                        idGen = new Thread(new GenerateLocallyUniqueID());
+                        idGen.start();
+                        idGenStarted = true;
+                    }
+                    if(seed)
+                    {
+                        state = State.JOINED_SHAPE;
+                    }
+                    else
+                    {
+                        if(!gradientFormationStarted)
+                        {
+                            stopGradientFormation = false;
+                            gradientFormation = new Thread(new GradientFormation());
+                            gradientFormation.start();
+                            gradientFormationStarted = true;
+                        }
+                        if(!localizationStarted)
+                        {
+                            stopLocalization = false;
+                            localization = new Thread(new Localization());
+                            localization.start();
+                            localizationStarted = true;
+                        }
+                        timer += 1;
+                        Thread.sleep(1000);
+                        System.out.println(timer);
+                        if(timer > startupTime)
+                        {
+                            state = State.WAIT_TO_MOVE;
+                        }
+                    }
                 }
-                else
+                else if(state == State.WAIT_TO_MOVE)
                 {
-                    if(!gradientFormationStarted)
-                    {
-                        stopGradientFormation = false;
-                        gradientFormation = new Thread(new GradientFormation());
-                    }
-                    if(!localizationStarted)
-                    {
-                        stopLocalization = false;
-                        localization = new Thread(new Localization());
-                    }
-                    timer += 1;
-                    if(timer > startupTime)
-                    {
-                        state = State.WAIT_TO_MOVE;
-                    }
-                }
-            }
-            else if(state == State.WAIT_TO_MOVE)
-            {
-                ArrayList<Bot> neighbors = IO.getNeighbors(this);
-                boolean movingNeighbors = false;
-                for(Bot bot : neighbors)
-                {
-                    if(!bot.stationary)
-                    {
-                        movingNeighbors = true;
-                        break;
-                    }
-                }
-                if(!movingNeighbors)
-                {
-                    int h = 0;
+                    ArrayList<Bot> neighbors = IO.getNeighbors(Bot.this);
+                    boolean movingNeighbors = false;
                     for(Bot bot : neighbors)
                     {
-                        if(h < bot.gradientValue)
+                        if(!bot.stationary)
                         {
-                            h = bot.gradientValue;
+                            movingNeighbors = true;
+                            break;
                         }
                     }
-                    if(gradientValue > h)
+                    if(!movingNeighbors)
                     {
-                        state = State.MOVE_WHILE_OUTSIDE;
-                    }
-                    else if(gradientValue == h)
-                    {
-                        boolean condition = true;
+                        int h = 0;
                         for(Bot bot : neighbors)
                         {
-                            if(gradientValue == bot.gradientValue && id <= bot.id)
+                            if(h < bot.gradientValue)
                             {
-                                condition = false;
-                                break;
+                                h = bot.gradientValue;
                             }
                         }
-                        if(condition)
+                        if(gradientValue > h)
                         {
                             state = State.MOVE_WHILE_OUTSIDE;
                         }
+                        else if(gradientValue == h)
+                        {
+                            boolean condition = true;
+                            for(Bot bot : neighbors)
+                            {
+                                if(gradientValue == bot.gradientValue && id <= bot.id)
+                                {
+                                    condition = false;
+                                    break;
+                                }
+                            }
+                            if(condition)
+                            {
+                                state = State.MOVE_WHILE_OUTSIDE;
+                            }
+                        }
+                    }
+                }
+                else if(state == State.MOVE_WHILE_OUTSIDE)
+                {
+                    if(img[(int)position.getX()][(int)position.getY()] == 0)
+                    {
+                        state = State.MOVE_WHILE_INSIDE;
+                    }
+    //                if( > yieldDistance)
+    //                {
+                        stopEdgeFollow = false;
+                        stationary = false;
+                        if(!edgeFollowStarted)
+                        {
+                            edgeFollow = new Thread(new EdgeFollow());
+                            edgeFollow.start();
+                            edgeFollowStarted = true;
+                        }
+    //                }
+    //                else
+    //                {
+    //                    stopEdgeFollow = true;
+    //                    if(edgeFollow != null)
+    //                    {
+    //                        edgeFollow.join();
+    //                    }
+    //                    stationary = true;
+    //                }
+                }
+                else if(state == State.MOVE_WHILE_INSIDE)
+                {
+                    if(img[(int)position.getX()][(int)position.getY()] == 1)
+                    {
+                        state = State.JOINED_SHAPE;
+                    }
+                    if(gradientValue <= IO.closestNeighbor(Bot.this).gradientValue)
+                    {
+                        state = State.JOINED_SHAPE;
+                    }
+    //                if( > yieldDistance)
+    //                {
+                        stopEdgeFollow = false;
+                        stationary = false;
+                        if(!edgeFollowStarted)
+                        {
+                            edgeFollow = new Thread(new EdgeFollow());
+                            edgeFollow.start();
+                            edgeFollowStarted = true;
+                        }
+    //                }
+    //                else
+    //                {
+    //                    stopEdgeFollow = true;
+    //                    if(edgeFollow != null)
+    //                    {
+    //                        edgeFollow.join();
+    //                    }
+    //                    stationary = true;
+    //                }
+                }   
+                else if(state == State.JOINED_SHAPE)
+                {
+                    stationary = true;
+                    if(edgeFollow != null)
+                    {
+                        edgeFollow.join();
+                    }
+                    stopLocalization = true;
+                    if(localization != null)
+                    {
+                        localization.join();
+                    }
+                    stopGradientFormation = true;
+                    if(gradientFormation != null)
+                    {
+                        gradientFormation.join();
+                    }
+                    stopIdGen = true;
+                    if(idGen != null)
+                    {
+                        idGen.join();
                     }
                 }
             }
-            else if(state == State.MOVE_WHILE_OUTSIDE)
-            {
-                if(img[(int)position.getX()][(int)position.getY()] == 0)
-                {
-                    state = State.MOVE_WHILE_INSIDE;
-                }
-                if( > yieldDistance)
-                {
-                    stopEdgeFollow = false;
-                    stationary = false;
-                    edgeFollow = new Thread(new EdgeFollow());
-                    edgeFollow.start();
-                }
-                else
-                {
-                    stopEdgeFollow = true;
-                    edgeFollow.join();
-                    stationary = true;
-                }
-            }
-            else if(state == State.MOVE_WHILE_INSIDE)
-            {
-                if(img[(int)position.getX()][(int)position.getY()] == 1)
-                {
-                    state = State.JOINED_SHAPE;
-                }
-                if(gradientValue <= IO.closestNeighbor(this).gradientValue)
-                {
-                    state = State.JOINED_SHAPE;
-                }
-                if( > yieldDistance)
-                {
-                    stopEdgeFollow = false;
-                    stationary = false;
-                    edgeFollow = new Thread(new EdgeFollow());
-                    edgeFollow.start();
-                }
-                else
-                {
-                    stopEdgeFollow = true;
-                    edgeFollow.join();
-                    stationary = true;
-                }
-            }   
-            else if(state == State.JOINED_SHAPE)
-            {
-                stopLocalization = true;
-                localization.join();
-                stopGradientFormation = true;
-                gradientFormation.join();
-            }
         }
-            
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 }

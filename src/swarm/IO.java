@@ -18,7 +18,7 @@ public class IO {
     //simulates random noise from sensor data
     public static int getRandomSeed()
     {
-        return random.nextInt();
+        return random.nextInt(100);
     }
     
     //simulates sensors searching for nearby neighbors
@@ -30,7 +30,9 @@ public class IO {
         
         for(Bot b : bots)
         {
-            if(botCoords.get(b).distanceSq(coords) < neighborDistSquared)
+            double dist = botCoords.get(b).distanceSq(coords);
+            if(dist < neighborDistSquared &&
+               dist > neighborDist)
             {
                 neighbors.add(b);
             }
@@ -53,7 +55,7 @@ public class IO {
         {
             Point2D point = botCoords.get(b);
             double d = point.distanceSq(coords);
-            if(d < dist)
+            if(d < dist && d >= neighborDist)
             {
                 dist = d;
                 minBot = b;
@@ -63,7 +65,7 @@ public class IO {
     }
     
     //theta in degrees
-    public static void move(Bot bot, int theta)
+    public static void move(Bot bot, int dx, int dy)
     {
         Point2D coords = botCoords.get(bot);
         
