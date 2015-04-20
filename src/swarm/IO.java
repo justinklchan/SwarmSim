@@ -2,15 +2,16 @@ package swarm;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 
 /**
  *
  * @author chanjustin
  */
-public class Sensors {
+public class IO {
     static ArrayList<Bot> bots;
-    static ArrayList<Point2D> botCoords;
+    static HashMap<Bot,Point2D> botCoords;
     static Random random = new Random(20);
     static final int neighborDist = 10;
     
@@ -24,14 +25,14 @@ public class Sensors {
     public static ArrayList<Bot> getNeighbors(Bot bot)
     {
         ArrayList<Bot> neighbors = new ArrayList<Bot>();
-        Point2D coords = botCoords.get(bots.indexOf(bot));
+        Point2D coords = botCoords.get(bot);
         int neighborDistSquared = neighborDist*neighborDist;
         
-        for(int i = 0; i < botCoords.size(); i++)
+        for(Bot b : bots)
         {
-            if(botCoords.get(i).distanceSq(coords) < neighborDistSquared)
+            if(botCoords.get(b).distanceSq(coords) < neighborDistSquared)
             {
-                neighbors.add(bots.get(i));
+                neighbors.add(b);
             }
         }
         return neighbors;
@@ -39,26 +40,32 @@ public class Sensors {
     
     public static double measuredDistance(Bot b1, Bot b2)
     {
-        return botCoords.get(bots.indexOf(b1)).distance( botCoords.get(bots.indexOf(b2)));
+        return botCoords.get(b1).distance(botCoords.get(b2));
     }
     
     public static Bot closestNeighbor(Bot bot)
     {
-        Point2D coords = botCoords.get(bots.indexOf(bot));
+        Point2D coords = botCoords.get(bot);
         
         double dist = Double.MAX_VALUE;
-        int minInd = 0;
-        int ind = 0;
-        for(Point2D point : botCoords)
+        Bot minBot = bots.get(0);
+        for(Bot b : bots)
         {
+            Point2D point = botCoords.get(b);
             double d = point.distanceSq(coords);
             if(d < dist)
             {
                 dist = d;
-                minInd = ind;
+                minBot = b;
             }
-            ind += 1;
         }
-        return bots.get(minInd);
+        return minBot;
+    }
+    
+    //theta in degrees
+    public static void move(Bot bot, int theta)
+    {
+        Point2D coords = botCoords.get(bot);
+        
     }
 }

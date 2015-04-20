@@ -13,6 +13,7 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
@@ -82,8 +83,8 @@ public class Swarm extends javax.swing.JFrame {
         {
             super();
             random = new Random(RAND_SEED);
-            Sensors.bots = new ArrayList<Bot>(nBots);
-            Sensors.botCoords = new ArrayList<Point2D>(nBots);
+            IO.bots = new ArrayList<Bot>(nBots);
+            IO.botCoords = new HashMap<Bot,Point2D>(nBots);
         }
         
         @Override
@@ -99,6 +100,17 @@ public class Swarm extends javax.swing.JFrame {
                 packSpawnInArea(x, y, w, h, img);
                 setSeed(105,95);
                 spawned = true;
+                try
+                {
+                    for(Bot bot : IO.bots)
+                    {
+                        bot.selfAssembly();
+                    }
+                }
+                catch(Exception e)
+                {
+                    e.printStackTrace();
+                }
             }
             
             drawShape(g,img);
@@ -112,33 +124,42 @@ public class Swarm extends javax.swing.JFrame {
             {
                 for(int j = 95; j <= 100; j += 5)
                 {
-                    Sensors.botCoords.add(new Point2D.Double(i,j));
-                    System.out.println(i+","+j);
                     Bot bot = new Bot(img);
+                    IO.botCoords.put(bot,new Point2D.Double(i,j));
                     bot.seed = true;
-                    Sensors.bots.add(bot);
+                    IO.bots.add(bot);
                 }
             }
-            Sensors.bots.get(Sensors.bots.size()-1).gradientSeed = true;
+            IO.bots.get(IO.bots.size()-1).gradientSeed = true;
         }
         
         public void drawBots(Graphics g)
         {
-            for(int i = 0; i < Sensors.bots.size(); i++)
+            for(int i = 0; i < IO.bots.size(); i++)
             {
-                if(Sensors.bots.get(i).gradientSeed)
+                if(IO.bots.get(i).gradientSeed)
                 {
                     g.setColor(Color.blue);
                 }
-                else if(Sensors.bots.get(i).seed)
+                else if(IO.bots.get(i).seed)
                 {
-                    g.setColor(Color.red);
+                    g.setColor(Color.green);
                 }
                 else
                 {
-                    g.setColor(Color.black);
+                    //bots get redder, the nearer they are to the gradient seed
+                    int maxGradientValue = 0;
+                    for(Bot bot : IO.bots)
+                    {
+                        if(bot.gradientValue > maxGradientValue)
+                        {
+                            maxGradientValue = bot.gradientValue;
+                        }
+                    }
+                    int cVal = 255-IO.bots.get(i).gradientValue/maxGradientValue*255;
+                    g.setColor(new Color(cVal,0,0));
                 }
-                g.drawOval((int)Sensors.botCoords.get(i).getX(), (int)Sensors.botCoords.get(i).getY(), botSize, botSize);
+                g.drawOval((int)IO.botCoords.get(i).getX(), (int)IO.botCoords.get(i).getY(), botSize, botSize);
             }
         }
         
@@ -271,8 +292,9 @@ public class Swarm extends javax.swing.JFrame {
             {
                 for(int j = 0; j < yTimes; j++)
                 {
-                    Sensors.bots.add(new Bot(imgRep));
-                    Sensors.botCoords.add(new Point2D.Double(x+botSize*i,y+botSize*j));
+                    Bot bot = new Bot(imgRep);
+                    IO.bots.add(bot);
+                    IO.botCoords.put(bot,new Point2D.Double(x+botSize*i,y+botSize*j));
                 }
             }
         }
