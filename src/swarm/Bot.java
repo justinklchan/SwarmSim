@@ -24,6 +24,7 @@ public class Bot implements Runnable {
     boolean seed = false;
     int[][] img;
     int seqNum;
+    int s;
     
     boolean gradientSeed = false;
     int gradientValue;
@@ -44,23 +45,24 @@ public class Bot implements Runnable {
    
     int id;
     
-    public Bot(int[][] img) 
+    public Bot(int[][] img, int s) 
     {
         this.img = new int[img.length][];
         for(int i = 0; i < img.length; i++)
         {
             this.img[i] = img[i].clone();
         }
+        this.s = s;
     }
     
     public class EdgeFollow implements Runnable
     {
-        final int DISTANCE_MAX = 10;
-        final int DESIRED_DISTANCE = 15;
+        final int DISTANCE_MAX = Integer.MAX_VALUE;
+        final int DESIRED_DISTANCE = 10;
         
         public void run()
         {
-            System.out.println("edge follow "+seqNum);
+//            System.out.println("edge follow "+seqNum);
             double prev = DISTANCE_MAX;
             while(!stopEdgeFollow)
             {
@@ -80,15 +82,14 @@ public class Bot implements Runnable {
                     if(prev < current)
                     {
                         //move straight forward (to the right)
-                        IO.move(Bot.this,1,0);
+                        IO.move(Bot.this,s,0);
 //                        position.setLocation(position.getX()+1, position.getY());
 //                        System.out.println("m1");
                     }
                     else
                     {
                         //move forward and counterclockwise, straight and up
-                        IO.move(Bot.this,1,-1);
-//                        position.setLocation(position.getX()+1, position.getY()-1);
+                        IO.move(Bot.this,s,-s);
 //                        System.out.println("m2");
                     }
                 }
@@ -97,15 +98,13 @@ public class Bot implements Runnable {
                     if(prev > current)
                     {
                         //move straight forward
-                        IO.move(Bot.this,1,0);
-//                        position.setLocation(position.getX()+1, position.getY());
+                        IO.move(Bot.this,s,0);
 //                        System.out.println("m3");
                     }
                     else
                     {
                         //move forward and clockwise
-                        IO.move(Bot.this,1,1);
-//                        position.setLocation(position.getX()+1, position.getY()+1);
+                        IO.move(Bot.this,s,s);
 //                        System.out.println("m4");
                     }
                 }
@@ -123,7 +122,7 @@ public class Bot implements Runnable {
         
         public void run()
         {
-            System.out.println("gradient formation "+seqNum);
+//            System.out.println("gradient formation "+seqNum);
             while(!stopGradientFormation)
             {
                 gradientFormationStarted = true;
@@ -172,7 +171,8 @@ public class Bot implements Runnable {
                         nList.add(bot);
                     }
                 }
-                if(has3CollinearBots(nList))
+                if(true)
+//                if(has3NonCollinearBots(nList))
                 {
                     for(Bot bot : nList)
                     {
@@ -201,7 +201,7 @@ public class Bot implements Runnable {
         private void getSubsets(List<Integer> superSet, int k, int idx, Set<Integer> current,List<Set<Integer>> solution) {
             //successful stop clause
             if (current.size() == k) {
-                solution.add(new HashSet<>(current));
+                solution.add(new HashSet<Integer>(current));
                 return;
             }
             //unseccessful stop clause
@@ -222,7 +222,7 @@ public class Bot implements Runnable {
             return res;
         }
         
-        public boolean has3CollinearBots(ArrayList<Bot> nList)
+        public boolean has3NonCollinearBots(ArrayList<Bot> nList)
         {
             //get all subsets of size 3 for [0...nList.size()]
             List<Integer>superSet = new ArrayList<Integer>();
@@ -247,7 +247,7 @@ public class Bot implements Runnable {
             for(Set<Bot> set : botSubsets)
             {   
                 Bot[] bots = set.toArray(new Bot[set.size()]);
-                if(isCollinear(bots[0].position,bots[1].position,bots[2].position))
+                if(isNonCollinear(bots[0].position,bots[1].position,bots[2].position))
                 {
                     return true;
                 }
@@ -257,9 +257,9 @@ public class Bot implements Runnable {
     }
     
     //http://math.stackexchange.com/questions/405966/if-i-have-three-points-is-there-an-easy-way-to-tell-if-they-are-collinear
-    public boolean isCollinear(Point2D p1, Point2D p2, Point2D p3)
+    public boolean isNonCollinear(Point2D p1, Point2D p2, Point2D p3)
     {
-        return (p2.getY()-p1.getY())*(p1.getX()-p2.getX()) == (p3.getY()-p2.getY())*(p2.getX()-p1.getX());
+        return (p2.getY()-p1.getY())*(p1.getX()-p2.getX()) != (p3.getY()-p2.getY())*(p2.getX()-p1.getX());
     }
     
     public class GenerateLocallyUniqueID implements Runnable
@@ -276,7 +276,7 @@ public class Bot implements Runnable {
                     Random random = new Random(randSeed);
                     id = random.nextInt(10000);
                     idGenerated = true;
-                    System.out.println("id: "+id);
+//                    System.out.println("id: "+id);
                 }
                 else
                 {
@@ -418,8 +418,8 @@ public class Bot implements Runnable {
                 }
                 else if(state == State.MOVE_WHILE_OUTSIDE)
                 {
-//                    System.out.println("outside");
-                    if(img[(int)position.getY()][(int)position.getX()] == 0)
+                    System.out.println("outside");
+                    if(valAt((int)position.getY(),(int)position.getX()) == 0)
                     {
                         state = State.MOVE_WHILE_INSIDE;
                     }
@@ -448,9 +448,9 @@ public class Bot implements Runnable {
                 }
                 else if(state == State.MOVE_WHILE_INSIDE)
                 {
-//                    System.out.println("inside");
-                    System.out.println(img[(int)position.getY()][(int)position.getX()]);
-                    if(img[(int)position.getY()][(int)position.getX()] == 1)
+                    System.out.println("inside");
+//                    System.out.println(img[(int)position.getY()][(int)position.getX()]);
+                    if(valAt((int)position.getY(),(int)position.getX()) == 1)
                     {   
 //                        System.out.println("JOINED SHAPE!!!!");
                         state = State.JOINED_SHAPE;
@@ -512,5 +512,30 @@ public class Bot implements Runnable {
             e.printStackTrace();
         }
         System.out.println(seqNum + " ended");
+    }
+    
+    public int valAt(int y, int x)
+    {
+        int oX = x-s-1;
+        int oY = y-s-1;
+        
+        for(int i = oX; i <= oX+s; i++)
+        {
+            for(int j = oY; j <= oY+s; j++)
+            {
+                try
+                {
+                    if(img[j][i] == 1)
+                    {
+                        return 1;
+                    }
+                }
+                catch(Exception e)
+                {
+                    
+                }
+            }
+        }
+        return 0;
     }
 }

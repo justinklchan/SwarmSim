@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package swarm;
 
 import java.awt.Color;
@@ -120,14 +115,14 @@ public class Swarm extends javax.swing.JFrame {
 //                int h=15;
                 
                 //simple test (1)
-                int x=100;
-                int y=100;
+                int x=105;
+                int y=195;
                 int w=5;
                 int h=5;
-                
-                img = readShape(1,1);
-                setSeed(105,95);
-                packSpawnInArea(x, y, w, h, img);
+                int s = 2;
+                img = readShape(s,s);
+                setSeed(110,190,s);
+                packSpawnInArea(x, y, w, h, img, s);
                 int i = 0;
                 for(Bot bot : IO.bots)
                 {
@@ -146,15 +141,17 @@ public class Swarm extends javax.swing.JFrame {
         }
         
         //we set 4 seeds, one is the gradient seed
-        public void setSeed(int x, int y)
+        public void setSeed(int x, int y, int s)
         {
-            for(int i = 105; i <= 110; i += 5)
+            int xIncrement = 5;
+            int yIncrement = 5;
+            for(int i = 0; i <= 1; i += 1)
             {
-                for(int j = 95; j <= 100; j += 5)
+                for(int j = 0; j <= 1; j += 1)
                 {
-                    Bot bot = new Bot(img);
+                    Bot bot = new Bot(img, s);
                     //this is the global coordinates
-                    IO.botCoords.put(bot,new Point2D.Double(i,j));
+                    IO.botCoords.put(bot,new Point2D.Double(x+i*xIncrement,y+j*yIncrement));
                     bot.seed = true;
                     bot.localized = true;
                     //position is relative to the image
@@ -294,7 +291,7 @@ public class Swarm extends javax.swing.JFrame {
         {
             int w = before.getWidth();
             int h = before.getHeight();
-            BufferedImage after = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+            BufferedImage after = new BufferedImage((int)(w*sx), (int)(h*sy), BufferedImage.TYPE_INT_ARGB);
             for(int i = 0; i < w; i++)
             {
                 for(int j = 0; j < h; j++)
@@ -321,7 +318,7 @@ public class Swarm extends javax.swing.JFrame {
         }
         
         //pack bots in a given area
-        public void packSpawnInArea(int x, int y, int width, int height, int[][] imgRep)
+        public void packSpawnInArea(int x, int y, int width, int height, int[][] imgRep, int s)
         {
             int xTimes = width/botSize;
             int yTimes = height/botSize;
@@ -330,7 +327,7 @@ public class Swarm extends javax.swing.JFrame {
             {
                 for(int j = 0; j < yTimes; j++)
                 {
-                    Bot bot = new Bot(imgRep);
+                    Bot bot = new Bot(imgRep,s);
                     IO.bots.add(bot);
                     IO.botCoords.put(bot,new Point2D.Double(x+botSize*i,y+botSize*j));
                 }
