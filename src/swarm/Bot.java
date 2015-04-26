@@ -59,6 +59,7 @@ public class Bot implements Runnable {
     {
         final int DISTANCE_MAX = Integer.MAX_VALUE;
         final int DESIRED_DISTANCE = 10;
+        final double moveIncrement = .1;
         
         public void run()
         {
@@ -77,19 +78,20 @@ public class Bot implements Runnable {
                         current = dist;
                     }
                 }
+//                System.out.println("nearest neighbor: "+current);
                 if(current < DESIRED_DISTANCE)
                 {
                     if(prev < current)
                     {
                         //move straight forward (to the right)
-                        IO.move(Bot.this,s,0);
+                        IO.move(Bot.this,moveIncrement,0);
 //                        position.setLocation(position.getX()+1, position.getY());
 //                        System.out.println("m1");
                     }
                     else
                     {
                         //move forward and counterclockwise, straight and up
-                        IO.move(Bot.this,s,-s);
+                        IO.move(Bot.this,moveIncrement,-moveIncrement);
 //                        System.out.println("m2");
                     }
                 }
@@ -98,13 +100,13 @@ public class Bot implements Runnable {
                     if(prev > current)
                     {
                         //move straight forward
-                        IO.move(Bot.this,s,0);
+                        IO.move(Bot.this,moveIncrement,0);
 //                        System.out.println("m3");
                     }
                     else
                     {
                         //move forward and clockwise
-                        IO.move(Bot.this,s,s);
+                        IO.move(Bot.this,moveIncrement,moveIncrement);
 //                        System.out.println("m4");
                     }
                 }
@@ -190,7 +192,10 @@ public class Bot implements Runnable {
                                                        bot.position.getY()+measuredDist*v.getY());
                         position = new Point2D.Double(position.getX()-(position.getX()-n.getX())/4,
                                                       position.getY()-(position.getY()-n.getY())/4);
-//                        System.out.println("localized "+position.getX()+","+position.getY());
+                        
+                        Point2D realCoords = IO.botCoords.get(Bot.this);
+                        System.out.println("localized ("+(int)realCoords.getX()+","+(int)realCoords.getY()+"), "+
+                                "("+position.getX()+","+position.getY()+")");
                     }
                 }
                 delay();
@@ -299,7 +304,7 @@ public class Bot implements Runnable {
     {
         try
         {
-            Thread.sleep(100);
+            Thread.sleep(10);
         }
         catch(Exception e)
         {
@@ -448,7 +453,7 @@ public class Bot implements Runnable {
                 }
                 else if(state == State.MOVE_WHILE_INSIDE)
                 {
-                    System.out.println("inside");
+//                    System.out.println("inside");
 //                    System.out.println(img[(int)position.getY()][(int)position.getX()]);
                     if(valAt((int)position.getY(),(int)position.getX()) == 1)
                     {   
@@ -532,7 +537,7 @@ public class Bot implements Runnable {
                 }
                 catch(Exception e)
                 {
-                    
+                    e.printStackTrace();
                 }
             }
         }

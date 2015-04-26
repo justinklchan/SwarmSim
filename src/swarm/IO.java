@@ -64,8 +64,7 @@ public class IO {
         return minBot;
     }
     
-    
-    public static void move(Bot bot, int dx, int dy)
+    public static void move(Bot bot, double dx, double dy)
     {
         Point2D coords = botCoords.get(bot);
 //        System.out.println(coords.getX()+","+coords.getY());

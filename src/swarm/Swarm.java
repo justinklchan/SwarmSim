@@ -87,7 +87,7 @@ public class Swarm extends javax.swing.JFrame {
             IO.bots = new ArrayList<Bot>(nBots);
             IO.botCoords = new HashMap<Bot,Point2D>(nBots);
             botThreads = new ArrayList<Thread>(nBots);
-            timer = new Timer(1000, taskPerformer);
+            timer = new Timer(10, taskPerformer);
             timer.start();
         }
         
@@ -109,8 +109,8 @@ public class Swarm extends javax.swing.JFrame {
 //                int h=100;
                 
                 //medium test (9)
-//                int x=90;
-//                int y=90;
+//                int x=50;
+//                int y=50;
 //                int w=15;
 //                int h=15;
                 
@@ -155,7 +155,7 @@ public class Swarm extends javax.swing.JFrame {
                     bot.seed = true;
                     bot.localized = true;
                     //position is relative to the image
-                    bot.position = new Point2D.Double(0,img.length);
+                    bot.position = new Point2D.Double(.1,img.length);
                     IO.bots.add(bot);
                 }
             }
