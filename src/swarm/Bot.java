@@ -74,7 +74,6 @@ public class Bot implements Runnable {
             double prev = DISTANCE_MAX;
             while(!stopEdgeFollow)
             {
-                delay();
                 double current = DISTANCE_MAX;
                 ArrayList<Bot> neighbors = IO.getNeighbors(Bot.this);
                 for(Bot neighbor : neighbors)
@@ -177,39 +176,41 @@ public class Bot implements Runnable {
             }
             while(!stopLocalization)
             {
+//                System.out.println("LOCALIZE");
                 localizationStarted = true;
-                ArrayList<Bot> neighbors = IO.getNeighbors(Bot.this);
-                ArrayList<Bot> nList = new ArrayList<Bot>();
-                for(Bot bot : neighbors)
-                {
-                    if(bot.localized && bot.stationary)
-                    {
-                        nList.add(bot);
-                    }
-                }
-                if(nList.size() >= 3)
-//                if(has3NonCollinearBots(nList))
-                {
-                    for(Bot bot : nList)
-                    {
-                        double c = position.distance(bot.position);
-                        //this is a vector
-                        Point2D v = new Point2D.Double(
-                                       (position.getX()-bot.position.getX())/c,
-                                       (position.getY()-bot.position.getY())/c);
-                        double measuredDist = IO.measuredDistance(Bot.this,bot);
-                        Point2D n = new Point2D.Double(bot.position.getX()+measuredDist*v.getX(),
-                                                       bot.position.getY()+measuredDist*v.getY());
-                        position = new Point2D.Double(position.getX()-(position.getX()-n.getX())/4,
-                                                      position.getY()-(position.getY()-n.getY())/4);
-                        
-//                        Point2D realCoords = IO.botCoords.get(Bot.this);
-//                        System.out.println("localized ("+df.format(realCoords.getX())+","+df.format(realCoords.getY())+"), "+
-//                                "("+df.format(position.getX())+","+df.format(position.getY())+")");
-                    }
-                }
-                
-                delay();
+                position = IO.botCoords.get(Bot.this);
+//                ArrayList<Bot> neighbors = IO.getNeighbors(Bot.this);
+//                ArrayList<Bot> nList = new ArrayList<Bot>();
+//                for(Bot bot : neighbors)
+//                {
+//                    if(bot.localized && bot.stationary)
+//                    {
+//                        nList.add(bot);
+//                    }
+//                }
+//                if(nList.size() >= 3)
+////                if(has3NonCollinearBots(nList))
+//                {
+//                    for(Bot bot : nList)
+//                    {
+//                        double c = position.distance(bot.position);
+//                        //this is a vector
+//                        Point2D v = new Point2D.Double(
+//                                       (position.getX()-bot.position.getX())/c,
+//                                       (position.getY()-bot.position.getY())/c);
+//                        double measuredDist = IO.measuredDistance(Bot.this,bot);
+//                        Point2D n = new Point2D.Double(bot.position.getX()+measuredDist*v.getX(),
+//                                                       bot.position.getY()+measuredDist*v.getY());
+//                        position = new Point2D.Double(position.getX()-(position.getX()-n.getX())/4,
+//                                                      position.getY()-(position.getY()-n.getY())/4);
+//                        
+////                        Point2D realCoords = IO.botCoords.get(Bot.this);
+////                        System.out.println("localized ("+df.format(realCoords.getX())+","+df.format(realCoords.getY())+"), "+
+////                                "("+df.format(position.getX())+","+df.format(position.getY())+")");
+//                    }
+//                }
+//                
+//                delay();
             }
         }
         
@@ -381,7 +382,7 @@ public class Bot implements Runnable {
                         }
                         timer += 1;
                         Thread.sleep(1000);
-                        System.out.println(timer);
+                        
                         if(timer > startupTime)
                         {
                             state = State.WAIT_TO_MOVE;
@@ -434,7 +435,7 @@ public class Bot implements Runnable {
                 }
                 else if(state == State.MOVE_WHILE_OUTSIDE)
                 {
-                    System.out.println("outside");
+                    System.out.println("outside "+id);
                     int val = valAt((int)position.getY(),(int)position.getX());
                     System.out.println("("+(int)position.getX()+","+(int)position.getY()+") " + val);
                     if(val == 0)
@@ -467,7 +468,10 @@ public class Bot implements Runnable {
                 else if(state == State.MOVE_WHILE_INSIDE)
                 {
                     System.out.println("inside");
-                    if(valAt((int)position.getY(),(int)position.getX()) == 1)
+                    int val = valAt((int)position.getY(),(int)position.getX());
+                    System.out.println("("+(int)position.getX()+","+(int)position.getY()+") " + val);
+                    
+                    if(val == 1)
                     {   
                         System.out.println("JOINED SHAPE 1");
                         state = State.JOINED_SHAPE;

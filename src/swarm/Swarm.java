@@ -103,33 +103,40 @@ public class Swarm extends javax.swing.JFrame {
             super.paintComponent(g);
             if(!spawned)
             {
-                //advanced test (400) 
-//                int x=5;
-//                int y=5;
-//                int w=100;
-//                int h=100;
+                //advanced test (16) 
+//                int x=90;
+//                int y=80;
+//                int w=20;
+//                int h=20;
                 
                 //medium test (9)
-//                int x=50;
-//                int y=50;
+//                int x=95;
+//                int y=85;
 //                int w=15;
 //                int h=15;
                 
                 //simple test (4)
-                int x=100;
-                int y=90;
-                int w=10;
-                int h=10;
+//                int x=100;
+//                int y=90;
+//                int w=10;
+//                int h=10;
+                
+                //simple test (2)
+//                int x=105;
+//                int y=90;
+//                int w=5;
+//                int h=10;
                 
                 //simple test (1)
-//                int x=105;
-//                int y=95;
-//                int w=5;
-//                int h=5;
+                int x=105;
+                int y=95;
+                int w=5;
+                int h=5;
                 
                 int s = 1;
                 int sx = 110;
                 int sy = 90;
+                
                 img = readShape(s,s);
                 setSeed(sx,sy,s);
                 packSpawnInArea(sx, sy+botSize, x, y, w, h, img, s);
@@ -165,7 +172,7 @@ public class Swarm extends javax.swing.JFrame {
                 }
                 else
                 {
-                    //bots get redder, the nearer they are to the gradient seed
+                   // bots get redder, the nearer they are to the gradient seed
 //                    int maxGradientValue = 0;
 //                    for(Bot b : IO.bots)
 //                    {
