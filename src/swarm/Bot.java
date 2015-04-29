@@ -48,7 +48,7 @@ public class Bot implements Runnable {
     double epsilon = 0.00001;
    
     int id;
-    double angle = 22.5;
+    double angle = 20;
     
     public Bot(int[][] img, int s) 
     {
@@ -315,7 +315,7 @@ public class Bot implements Runnable {
     {
         try
         {
-            Thread.sleep(100);
+            Thread.sleep(10);
         }
         catch(Exception e)
         {
@@ -435,8 +435,9 @@ public class Bot implements Runnable {
                 else if(state == State.MOVE_WHILE_OUTSIDE)
                 {
                     System.out.println("outside");
-                    System.out.println("("+(int)position.getX()+","+(int)position.getY()+") "+valAt((int)position.getY(),(int)position.getX()));
-                    if(valAt((int)position.getY(),(int)position.getX()) == 0)
+                    int val = valAt((int)position.getY(),(int)position.getX());
+                    System.out.println("("+(int)position.getX()+","+(int)position.getY()+") " + val);
+                    if(val == 0)
                     {
                         state = State.MOVE_WHILE_INSIDE;
                     }
@@ -466,7 +467,6 @@ public class Bot implements Runnable {
                 else if(state == State.MOVE_WHILE_INSIDE)
                 {
                     System.out.println("inside");
-                    System.out.println("("+(int)position.getY()+","+(int)position.getX()+") "+valAt((int)position.getY(),(int)position.getX()));
                     if(valAt((int)position.getY(),(int)position.getX()) == 1)
                     {   
                         System.out.println("JOINED SHAPE 1");
@@ -549,30 +549,7 @@ public class Bot implements Runnable {
         }
         else
         {
-//            int oX = x-s-1;
-//            int oY = y-s-1;
-//
-//            for(int i = oX; i <= oX+s; i++)
-//            {
-//                for(int j = oY; j <= oY+s; j++)
-//                {
-//                    try
-//                    {
-//                        if(img[j][i] == 1)
-//                        {
-//                            return 1;
-//                        }
-//                    }
-//                    catch(Exception e)
-//                    {
-//    //                    System.out.println(j+","+i);
-//    //                    e.printStackTrace();
-//                        //ignore error
-//                    }
-//                }
-//            }
-//            return 0;
-            return img[y][x];
+            return img[img.length-y-1][x];
         }
     }
 }
