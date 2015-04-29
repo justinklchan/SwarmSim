@@ -115,11 +115,18 @@ public class Swarm extends javax.swing.JFrame {
 //                int w=15;
 //                int h=15;
                 
+                //simple test (4)
+                int x=100;
+                int y=90;
+                int w=10;
+                int h=10;
+                
                 //simple test (1)
-                int x=105;
-                int y=95;
-                int w=5;
-                int h=5;
+//                int x=105;
+//                int y=95;
+//                int w=5;
+//                int h=5;
+                
                 int s = 1;
                 int sx = 110;
                 int sy = 90;
