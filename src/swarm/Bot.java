@@ -1,6 +1,7 @@
 package swarm;
 
 import java.awt.geom.Point2D;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +26,8 @@ public class Bot implements Runnable {
     int[][] img;
     int seqNum;
     int s;
+    DecimalFormat df = new DecimalFormat("0.##");
+    Point2D direction;
     
     boolean gradientSeed = false;
     int gradientValue;
@@ -42,8 +45,10 @@ public class Bot implements Runnable {
     boolean gradientFormationStarted;
     boolean idGenStarted;
     boolean edgeFollowStarted;
+    double epsilon = 0.00001;
    
     int id;
+    double angle = 22.5;
     
     public Bot(int[][] img, int s) 
     {
@@ -53,6 +58,8 @@ public class Bot implements Runnable {
             this.img[i] = img[i].clone();
         }
         this.s = s;
+        //robots are all facing to the right
+        direction = new Point2D.Double(1,0);
     }
     
     public class EdgeFollow implements Runnable
@@ -78,20 +85,23 @@ public class Bot implements Runnable {
                         current = dist;
                     }
                 }
-//                System.out.println("nearest neighbor: "+current);
+//                System.out.println("nearest neighbor: "+current); 
                 if(current < DESIRED_DISTANCE)
                 {
                     if(prev < current)
                     {
-                        //move straight forward (to the right)
-                        IO.move(Bot.this,moveIncrement,0);
+                        //move straight forward (to the right) 
+                        IO.move(Bot.this,direction.getX(),direction.getY());
 //                        position.setLocation(position.getX()+1, position.getY());
 //                        System.out.println("m1");
                     }
                     else
                     {
                         //move forward and counterclockwise, straight and up
-                        IO.move(Bot.this,moveIncrement,-moveIncrement);
+                        double xp = direction.getX()*Math.cos(-angle)-direction.getY()*Math.sin(-angle);
+                        double yp = direction.getX()*Math.sin(-angle)+direction.getY()*Math.cos(-angle);
+                        direction = new Point2D.Double(xp, yp);
+                        IO.move(Bot.this,direction.getX(),direction.getY());
 //                        System.out.println("m2");
                     }
                 }
@@ -100,13 +110,17 @@ public class Bot implements Runnable {
                     if(prev > current)
                     {
                         //move straight forward
-                        IO.move(Bot.this,moveIncrement,0);
+                        IO.move(Bot.this,direction.getX(),direction.getY());
 //                        System.out.println("m3");
                     }
                     else
                     {
                         //move forward and clockwise
-                        IO.move(Bot.this,moveIncrement,moveIncrement);
+                        double xp = direction.getX()*Math.cos(angle)-direction.getY()*Math.sin(angle);
+                        double yp = direction.getX()*Math.sin(angle)+direction.getY()*Math.cos(angle);
+                        direction = new Point2D.Double(xp, yp);
+                        direction = new Point2D.Double(direction.getX(), direction.getY());
+                        IO.move(Bot.this,direction.getX(),direction.getY());
 //                        System.out.println("m4");
                     }
                 }
@@ -159,7 +173,7 @@ public class Bot implements Runnable {
         {
             if(!seed)
             {
-                position = new Point2D.Double(0, 0);
+                position = new Point2D.Double(epsilon,epsilon);
             }
             while(!stopLocalization)
             {
@@ -173,16 +187,12 @@ public class Bot implements Runnable {
                         nList.add(bot);
                     }
                 }
-                if(true)
+                if(nList.size() >= 3)
 //                if(has3NonCollinearBots(nList))
                 {
                     for(Bot bot : nList)
                     {
                         double c = position.distance(bot.position);
-//                        if(c == 0)
-//                        {
-//                            c = 1;
-//                        }
                         //this is a vector
                         Point2D v = new Point2D.Double(
                                        (position.getX()-bot.position.getX())/c,
@@ -193,11 +203,12 @@ public class Bot implements Runnable {
                         position = new Point2D.Double(position.getX()-(position.getX()-n.getX())/4,
                                                       position.getY()-(position.getY()-n.getY())/4);
                         
-                        Point2D realCoords = IO.botCoords.get(Bot.this);
-                        System.out.println("localized ("+(int)realCoords.getX()+","+(int)realCoords.getY()+"), "+
-                                "("+position.getX()+","+position.getY()+")");
+//                        Point2D realCoords = IO.botCoords.get(Bot.this);
+//                        System.out.println("localized ("+df.format(realCoords.getX())+","+df.format(realCoords.getY())+"), "+
+//                                "("+df.format(position.getX())+","+df.format(position.getY())+")");
                     }
                 }
+                
                 delay();
             }
         }
@@ -222,7 +233,7 @@ public class Bot implements Runnable {
 
         //http://stackoverflow.com/questions/12548312/find-all-subsets-of-length-k-in-an-array
         public List<Set<Integer>> getSubsets(List<Integer> superSet, int k) {
-            List<Set<Integer>> res = new ArrayList<>();
+            List<Set<Integer>> res = new ArrayList<Set<Integer>>();
             getSubsets(superSet, k, 0, new HashSet<Integer>(), res);
             return res;
         }
@@ -304,7 +315,7 @@ public class Bot implements Runnable {
     {
         try
         {
-            Thread.sleep(10);
+            Thread.sleep(100);
         }
         catch(Exception e)
         {
@@ -424,6 +435,7 @@ public class Bot implements Runnable {
                 else if(state == State.MOVE_WHILE_OUTSIDE)
                 {
                     System.out.println("outside");
+                    System.out.println("("+(int)position.getX()+","+(int)position.getY()+") "+valAt((int)position.getY(),(int)position.getX()));
                     if(valAt((int)position.getY(),(int)position.getX()) == 0)
                     {
                         state = State.MOVE_WHILE_INSIDE;
@@ -453,15 +465,16 @@ public class Bot implements Runnable {
                 }
                 else if(state == State.MOVE_WHILE_INSIDE)
                 {
-//                    System.out.println("inside");
-//                    System.out.println(img[(int)position.getY()][(int)position.getX()]);
+                    System.out.println("inside");
+                    System.out.println("("+(int)position.getY()+","+(int)position.getX()+") "+valAt((int)position.getY(),(int)position.getX()));
                     if(valAt((int)position.getY(),(int)position.getX()) == 1)
                     {   
-//                        System.out.println("JOINED SHAPE!!!!");
+                        System.out.println("JOINED SHAPE 1");
                         state = State.JOINED_SHAPE;
                     }
                     if(gradientValue <= IO.closestNeighbor(Bot.this).gradientValue)
                     {
+                        System.out.println("JOINED SHAPE 2");
                         state = State.JOINED_SHAPE;
                     }
                     //TODO
@@ -489,25 +502,34 @@ public class Bot implements Runnable {
                 else if(state == State.JOINED_SHAPE)
                 {
                     stationary = true;
+                    stopEdgeFollow = true;
                     if(edgeFollow != null)
                     {
                         edgeFollow.join();
                     }
+                    System.out.println("EDGE FOLLOW STOPPED");
+                    
                     stopLocalization = true;
                     if(localization != null)
                     {
                         localization.join();
                     }
+                    System.out.println("LOCALIZATION STOPPED");
+                    
                     stopGradientFormation = true;
                     if(gradientFormation != null)
                     {
                         gradientFormation.join();
                     }
+                    System.out.println("GRADIENT FORMATION STOPPED");
+                    
                     stopIdGen = true;
                     if(idGen != null)
                     {
                         idGen.join();
                     }
+                    System.out.println("ID GEN STOPPED");
+                    
                     break;
                 }
             }
@@ -521,26 +543,36 @@ public class Bot implements Runnable {
     
     public int valAt(int y, int x)
     {
-        int oX = x-s-1;
-        int oY = y-s-1;
-        
-        for(int i = oX; i <= oX+s; i++)
+        if(x < 0 || y < 0 || y >= img.length || x >= img[0].length)
         {
-            for(int j = oY; j <= oY+s; j++)
-            {
-                try
-                {
-                    if(img[j][i] == 1)
-                    {
-                        return 1;
-                    }
-                }
-                catch(Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
+            return 1;
         }
-        return 0;
+        else
+        {
+//            int oX = x-s-1;
+//            int oY = y-s-1;
+//
+//            for(int i = oX; i <= oX+s; i++)
+//            {
+//                for(int j = oY; j <= oY+s; j++)
+//                {
+//                    try
+//                    {
+//                        if(img[j][i] == 1)
+//                        {
+//                            return 1;
+//                        }
+//                    }
+//                    catch(Exception e)
+//                    {
+//    //                    System.out.println(j+","+i);
+//    //                    e.printStackTrace();
+//                        //ignore error
+//                    }
+//                }
+//            }
+//            return 0;
+            return img[y][x];
+        }
     }
 }

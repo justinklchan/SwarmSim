@@ -86,6 +86,7 @@ public class Swarm extends javax.swing.JFrame {
             random = new Random(RAND_SEED);
             IO.bots = new ArrayList<Bot>(nBots);
             IO.botCoords = new HashMap<Bot,Point2D>(nBots);
+            IO.graphicsCoords = new HashMap<Bot,Point2D>(nBots);
             botThreads = new ArrayList<Thread>(nBots);
             timer = new Timer(10, taskPerformer);
             timer.start();
@@ -116,13 +117,15 @@ public class Swarm extends javax.swing.JFrame {
                 
                 //simple test (1)
                 int x=105;
-                int y=195;
+                int y=95;
                 int w=5;
                 int h=5;
-                int s = 2;
+                int s = 1;
+                int sx = 110;
+                int sy = 90;
                 img = readShape(s,s);
-                setSeed(110,190,s);
-                packSpawnInArea(x, y, w, h, img, s);
+                setSeed(sx,sy,s);
+                packSpawnInArea(sx, sy+botSize, x, y, w, h, img, s);
                 int i = 0;
                 for(Bot bot : IO.bots)
                 {
@@ -138,28 +141,6 @@ public class Swarm extends javax.swing.JFrame {
             
             drawShape(g,img,110,0);
             drawBots(g);
-        }
-        
-        //we set 4 seeds, one is the gradient seed
-        public void setSeed(int x, int y, int s)
-        {
-            int xIncrement = 5;
-            int yIncrement = 5;
-            for(int i = 0; i <= 1; i += 1)
-            {
-                for(int j = 0; j <= 1; j += 1)
-                {
-                    Bot bot = new Bot(img, s);
-                    //this is the global coordinates
-                    IO.botCoords.put(bot,new Point2D.Double(x+i*xIncrement,y+j*yIncrement));
-                    bot.seed = true;
-                    bot.localized = true;
-                    //position is relative to the image
-                    bot.position = new Point2D.Double(.1,img.length);
-                    IO.bots.add(bot);
-                }
-            }
-            IO.bots.get(IO.bots.size()-1).gradientSeed = true;
         }
         
         //TODO: this method should be synchronized
@@ -195,7 +176,82 @@ public class Swarm extends javax.swing.JFrame {
 //                    System.out.println(bot.gradientValue+","+maxGradientValue+","+cVal);
                     g.setColor(new Color(255,0,0));
                 }
-                g.drawOval((int)IO.botCoords.get(bot).getX(), (int)IO.botCoords.get(bot).getY(), botSize, botSize);
+                g.drawOval((int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY(), botSize, botSize);
+            }
+        }
+        
+        //we set 4 seeds, one is the gradient seed
+        public void setSeed(int x, int y, int s)
+        {
+            int xIncrement = 5;
+            int yIncrement = 5;
+            int seedCount = 0;
+            
+            for(int i = 0; i <= 1; i += 1)
+            {
+                for(int j = 0; j <= 1; j += 1)
+                {
+                    Bot bot = new Bot(img, s);
+                    bot.seed = true;
+                    bot.localized = true;
+                    
+//                    //this is the global coordinates
+                    double gx = x+i*xIncrement;
+                    double gy = y+j*yIncrement;
+                    IO.graphicsCoords.put(bot, new Point2D.Double(gx,gy));
+                        
+                    double px = 0;
+                    double py = 0;
+                    if(seedCount == 0)
+                    {
+                        px = 0;
+                        py = 5;
+                    }
+                    else if(seedCount == 1)
+                    {
+                        px = 0;
+                        py = 0;
+                    }
+                    else if(seedCount == 2)
+                    {
+                        px = 5;
+                        py = 5;
+                    }
+                    else
+                    {
+                        px = 5;
+                        py = 0;
+                    }
+                    bot.position = new Point2D.Double(px,py);
+                    IO.botCoords.put(bot,new Point2D.Double(px,py));
+                    seedCount += 1;
+                    
+                    IO.bots.add(bot);
+                }
+            }
+            IO.bots.get(IO.bots.size()-1).gradientSeed = true;
+        }
+        
+        //pack bots in a given area
+        public void packSpawnInArea(int sx, int sy, int startX, int startY, int width, int height, int[][] imgRep, int s)
+        {
+            int xTimes = width/botSize;
+            int yTimes = height/botSize;
+            
+            for(int i = 0; i < xTimes; i++)
+            {
+                for(int j = 0; j < yTimes; j++)
+                {
+                    Bot bot = new Bot(imgRep,s);
+                    IO.bots.add(bot);
+                    double gx = startX+botSize*i;
+                    double gy = (startY+botSize*j);
+                    IO.graphicsCoords.put(bot, new Point2D.Double(gx,gy));
+                    
+                    double x = gx-sx;
+                    double y = gy-sy;
+                    IO.botCoords.put(bot,new Point2D.Double(x,y));
+                }
             }
         }
         
@@ -254,7 +310,7 @@ public class Swarm extends javax.swing.JFrame {
             BufferedImage image = null;
             try
             {
-                image = ImageIO.read(new File("shape.bmp"));
+                image = ImageIO.read(new File("src/shape.bmp"));
                 image = scale(image,sx,sy);
             }
             catch(Exception e)
@@ -315,23 +371,6 @@ public class Swarm extends javax.swing.JFrame {
         public Color convertToColor(int c)
         {
             return new Color(c);
-        }
-        
-        //pack bots in a given area
-        public void packSpawnInArea(int x, int y, int width, int height, int[][] imgRep, int s)
-        {
-            int xTimes = width/botSize;
-            int yTimes = height/botSize;
-            
-            for(int i = 0; i < xTimes; i++)
-            {
-                for(int j = 0; j < yTimes; j++)
-                {
-                    Bot bot = new Bot(imgRep,s);
-                    IO.bots.add(bot);
-                    IO.botCoords.put(bot,new Point2D.Double(x+botSize*i,y+botSize*j));
-                }
-            }
         }
     }
     

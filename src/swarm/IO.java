@@ -11,9 +11,10 @@ import java.util.Random;
  */
 public class IO {
     static ArrayList<Bot> bots;
-    static HashMap<Bot,Point2D> botCoords;
+    static HashMap<Bot,Point2D> botCoords; //real coords relative to origin of image
+    static HashMap<Bot,Point2D> graphicsCoords; //real coords relative to canvas
     static Random random = new Random(20);
-    static final int neighborDist = 10;
+    static final int neighborDist = 20;
     
     //simulates random noise from sensor data
     public static int getRandomSeed()
@@ -67,8 +68,9 @@ public class IO {
     public static void move(Bot bot, double dx, double dy)
     {
         Point2D coords = botCoords.get(bot);
-//        System.out.println(coords.getX()+","+coords.getY());
         coords.setLocation(coords.getX()+dx,coords.getY()+dy);
-//        System.out.println("=>"+coords.getX()+","+coords.getY());
+        
+        Point2D gCoords = graphicsCoords.get(bot);
+        gCoords.setLocation(gCoords.getX()+dx,gCoords.getY()-dy);
     }
 }
