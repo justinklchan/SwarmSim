@@ -167,18 +167,18 @@ public class Swarm extends javax.swing.JFrame {
 //                    }
                     g.setColor(new Color(255,0,0));
                 }
-                if(bot.gradientValue == 1)
-                {
-                    g.setColor(Color.BLUE);
-                }
-                if(bot.gradientValue == 2)
-                {
-                    g.setColor(Color.RED);
-                }
-                if(bot.gradientValue == 3)
-                {
-                    g.setColor(Color.PINK);
-                }
+//                if(bot.gradientValue == 1)
+//                {
+//                    g.setColor(Color.BLUE);
+//                }
+//                if(bot.gradientValue == 2)
+//                {
+//                    g.setColor(Color.RED);
+//                }
+//                if(bot.gradientValue == 3)
+//                {
+//                    g.setColor(Color.PINK);
+//                }
                 g.drawOval((int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY(), botSize, botSize);
 //                g.drawString(bot.gradientValue+"", (int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY());
             }
