@@ -15,6 +15,7 @@ public class IO {
     static HashMap<Bot,Point2D> graphicsCoords; //real coords relative to canvas
     static Random random = new Random(20);
     static final int neighborDist = 20;
+    static double epsilon = 0.00001;
     
     //simulates random noise from sensor data
     public static int getRandomSeed()
@@ -33,7 +34,7 @@ public class IO {
         {
             double dist = botCoords.get(b).distanceSq(coords);
             if(dist < neighborDistSquared &&
-               dist > neighborDist)
+               dist > epsilon)
             {
                 neighbors.add(b);
             }

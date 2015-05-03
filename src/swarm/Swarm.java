@@ -103,35 +103,13 @@ public class Swarm extends javax.swing.JFrame {
             super.paintComponent(g);
             if(!spawned)
             {
-                //advanced test (16) 
-//                int x=90;
-//                int y=80;
-//                int w=20;
-//                int h=20;
-                
-                //medium test (9)
-//                int x=95;
-//                int y=85;
-//                int w=15;
-//                int h=15;
-                
-                //simple test (4)
-//                int x=100;
-//                int y=90;
-//                int w=10;
-//                int h=10;
-                
-                //simple test (2)
-//                int x=105;
-//                int y=90;
-//                int w=5;
-//                int h=10;
-                
-                //simple test (1)
-                int x=105;
-                int y=95;
-                int w=5;
-                int h=5;
+                //numBots must be a square number
+                int numBots = 4;
+                int sBots = (int)Math.sqrt(numBots);
+                int x = 105-(sBots-1)*5;
+                int y = 95-(sBots-1)*5;
+                int w = 5*sBots;
+                int h = w;
                 
                 int s = 1;
                 int sx = 110;
@@ -144,13 +122,17 @@ public class Swarm extends javax.swing.JFrame {
                 for(Bot bot : IO.bots)
                 {
                     bot.seqNum = i;
-                    Thread t = new Thread(bot);
-                    botThreads.add(t);
-                    t.start();
                     i += 1;
                 }
-                
                 spawned = true;
+            }
+            
+            for(Bot bot : IO.bots)
+            {
+                if(!bot.ended)
+                {
+                    bot.run();
+                }
             }
             
             drawShape(g,img,110,0);
@@ -162,11 +144,7 @@ public class Swarm extends javax.swing.JFrame {
         {
             for(Bot bot : IO.bots)
             {
-                if(bot.gradientSeed)
-                {
-                    g.setColor(Color.blue);
-                }
-                else if(bot.seed)
+                if(bot.seed)
                 {
                     g.setColor(Color.green);
                 }
@@ -187,10 +165,22 @@ public class Swarm extends javax.swing.JFrame {
 //                    {
 //                        cVal = 255-((bot.gradientValue/maxGradientValue)*255);
 //                    }
-//                    System.out.println(bot.gradientValue+","+maxGradientValue+","+cVal);
                     g.setColor(new Color(255,0,0));
                 }
+                if(bot.gradientValue == 1)
+                {
+                    g.setColor(Color.BLUE);
+                }
+                if(bot.gradientValue == 2)
+                {
+                    g.setColor(Color.RED);
+                }
+                if(bot.gradientValue == 3)
+                {
+                    g.setColor(Color.PINK);
+                }
                 g.drawOval((int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY(), botSize, botSize);
+//                g.drawString(bot.gradientValue+"", (int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY());
             }
         }
         
@@ -205,8 +195,7 @@ public class Swarm extends javax.swing.JFrame {
             {
                 for(int j = 0; j <= 1; j += 1)
                 {
-                    Bot bot = new Bot(img, s);
-                    bot.seed = true;
+                    Bot bot = new Bot(img, s, true);
                     bot.localized = true;
                     
 //                    //this is the global coordinates
@@ -256,7 +245,7 @@ public class Swarm extends javax.swing.JFrame {
             {
                 for(int j = 0; j < yTimes; j++)
                 {
-                    Bot bot = new Bot(imgRep,s);
+                    Bot bot = new Bot(imgRep,s,false);
                     IO.bots.add(bot);
                     double gx = startX+botSize*i;
                     double gy = (startY+botSize*j);
