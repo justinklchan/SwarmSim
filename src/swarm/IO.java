@@ -14,7 +14,7 @@ public class IO {
     static HashMap<Bot,Point2D> botCoords; //real coords relative to origin of image
     static HashMap<Bot,Point2D> graphicsCoords; //real coords relative to canvas
     static Random random = new Random(20);
-    static final int neighborDist = 20;
+    static int neighborDist = 15;
     static double epsilon = 0.00001;
     
     //simulates random noise from sensor data

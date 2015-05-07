@@ -22,6 +22,7 @@ public class Bot {
     int[][] img;
     int seqNum;
     int s;
+    int bSize;
     DecimalFormat df = new DecimalFormat("0.##");
     Point2D direction;
     boolean ended = false;
@@ -41,7 +42,7 @@ public class Bot {
     int id;
     double angle = 20;
     
-    public Bot(int[][] img, int s, boolean seed) 
+    public Bot(int[][] img, int s, boolean seed, int bSize) 
     {
         this.img = new int[img.length][];
         for(int i = 0; i < img.length; i++)
@@ -56,10 +57,13 @@ public class Bot {
         {
             position = new Point2D.Double(IO.epsilon,IO.epsilon);
         }
+        this.bSize = bSize;
+        G = bSize*2;
+        DESIRED_DISTANCE = bSize+1;
     }
     
     final int DISTANCE_MAX = Integer.MAX_VALUE;
-    final int DESIRED_DISTANCE = 6;
+    int DESIRED_DISTANCE;
     final double moveIncrement = 1;
 
     double prev = DISTANCE_MAX;
@@ -118,7 +122,7 @@ public class Bot {
     
     //gradient formation
     final int GRADIENT_MAX = 1000; //max gradient == maxbots
-    final int G = 10;
+    int G;
 
     public boolean GradientFormation()
     {
@@ -309,9 +313,6 @@ public class Bot {
     {
         try
         {
-            int v = valAt((int)position.getY(),(int)position.getX());
-//            Point2D gCoords = IO.graphicsCoords.get(Bot.this);
-//            System.out.println(seqNum + "("+(int)position.getX()+","+(int)position.getY()+")" + gradientValue);
             if(state == State.START)
             {
                 if(seed)
@@ -354,10 +355,6 @@ public class Bot {
                         {
                             System.out.println("1 " + id + " " + h);
                         }
-                        if(seqNum == 45)
-                        {
-                            System.out.println();
-                        }
                         state = State.MOVE_WHILE_OUTSIDE;
                     }
                     else if(gradientValue == h)
@@ -373,20 +370,12 @@ public class Bot {
                                id <= bot.id && 
                                bot.state != State.JOINED_SHAPE)
                             {
-                               if(seqNum == 45)
-                               {   
-                                   System.out.println();
-                               }
                                 condition = false;
                                 break;
                             }
                         }
                         if(condition)
                         {
-                            if(seqNum == 45)
-                            {
-                                System.out.println();
-                            }
                             state = State.MOVE_WHILE_OUTSIDE;
                         }
                     }

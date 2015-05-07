@@ -1,6 +1,7 @@
 package swarm;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -98,6 +99,9 @@ public class Swarm extends javax.swing.JFrame {
         CustomPanel = new SimPanel();
         nextButton = new javax.swing.JButton();
         actNumber = new javax.swing.JLabel();
+        startButton = new javax.swing.JButton();
+        stopButton = new javax.swing.JButton();
+        restartButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -114,23 +118,55 @@ public class Swarm extends javax.swing.JFrame {
             }
         });
 
+        startButton.setText("Start");
+        startButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                startButtonActionPerformed(evt);
+            }
+        });
+
+        stopButton.setText("Stop");
+        stopButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                stopButtonActionPerformed(evt);
+            }
+        });
+
+        restartButton.setText("Restart");
+        restartButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                restartButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout CustomPanelLayout = new javax.swing.GroupLayout(CustomPanel);
         CustomPanel.setLayout(CustomPanelLayout);
         CustomPanelLayout.setHorizontalGroup(
             CustomPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, CustomPanelLayout.createSequentialGroup()
-                .addGap(0, 325, Short.MAX_VALUE)
-                .addComponent(nextButton))
             .addGroup(CustomPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(actNumber, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, CustomPanelLayout.createSequentialGroup()
+                .addGap(0, 422, Short.MAX_VALUE)
+                .addComponent(restartButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(startButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(stopButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(nextButton)
+                .addGap(10, 10, 10))
         );
         CustomPanelLayout.setVerticalGroup(
             CustomPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(CustomPanelLayout.createSequentialGroup()
-                .addComponent(nextButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 248, Short.MAX_VALUE)
+                .addGroup(CustomPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(nextButton)
+                    .addComponent(startButton)
+                    .addComponent(stopButton)
+                    .addComponent(restartButton))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 364, Short.MAX_VALUE)
                 .addComponent(actNumber, javax.swing.GroupLayout.PREFERRED_SIZE, 17, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
@@ -153,6 +189,7 @@ public class Swarm extends javax.swing.JFrame {
         for(int i = 0; i < actInc; i++)
         {
             act();
+            actNum += 1;
         }
     }//GEN-LAST:event_nextButtonActionPerformed
 
@@ -169,40 +206,74 @@ public class Swarm extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_CustomPanelMouseClicked
+
+    private void startButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startButtonActionPerformed
+        drawTimer.start();
+    }//GEN-LAST:event_startButtonActionPerformed
+
+    private void stopButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stopButtonActionPerformed
+        drawTimer.stop();
+    }//GEN-LAST:event_stopButtonActionPerformed
+
+    private void restartButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_restartButtonActionPerformed
+        restart();
+        actNumber.setText(actNum+"");
+        spawned = false;
+        repaint();
+    }//GEN-LAST:event_restartButtonActionPerformed
     
-    int actInc = 10;
+    int actInc;
+    int actNum;
+    boolean spawned = false;
+    String SHAPE_FILE;
+    boolean drawShape;
+    int numBots;
+    Timer drawTimer;
         
+    public void restart()
+    {
+        IO.bots = new ArrayList<Bot>(1000);
+        IO.botCoords = new HashMap<Bot,Point2D>(1000);
+        IO.graphicsCoords = new HashMap<Bot,Point2D>(1000);
+        actNum = 0;
+    }
+    
     class SimPanel extends JPanel
     {
         int RAND_SEED = 20;
         Random random;
-        boolean spawned = false;
         
-        int nBots = 1000;
-        int botSize = 5;
+        int botSize;
         int[][] img;
         double MAX_GRADIENT;
+        int s;
         
-        Timer drawTimer;
-        ArrayList<Thread> botThreads;
         Color[] gradientColors;
         Color[] stateColors;
-        int actNum = 0;
         
         public SimPanel()
         {
             super();
+            
+            //DEMO 1 holey object
+            SHAPE_FILE = "src/holes.bmp";
+            drawShape = true;
+            MAX_GRADIENT = 50;
+            numBots = (int)Math.pow(11,2);
+            
+//            //DEMO 2 draw R
+//            SHAPE_FILE = "src/R.bmp";
+//            drawShape = false;
+//            MAX_GRADIENT = 30;
+//            numBots = (int)Math.pow(11,2);
+//            
+//            //DEMO 3 (too many bots)
+//            SHAPE_FILE = "src/R.bmp";
+//            drawShape = false;
+//            MAX_GRADIENT = 30;
+//            numBots = (int)Math.pow(12,2);
             random = new Random(RAND_SEED);
-            IO.bots = new ArrayList<Bot>(nBots);
-            IO.botCoords = new HashMap<Bot,Point2D>(nBots);
-            IO.graphicsCoords = new HashMap<Bot,Point2D>(nBots);
-            botThreads = new ArrayList<Thread>(nBots);
-            MAX_GRADIENT = 20;
-            gradientColors = new Color[(int)MAX_GRADIENT];
-            for(int i = 0; i < MAX_GRADIENT; i++)
-            {
-                gradientColors[i] = new Color(random.nextInt(256),random.nextInt(256),random.nextInt(256));
-            }
+            restart();
             stateColors = new Color[State.values().length];
             stateColors[0] = Color.black;
             stateColors[1] = Color.red;
@@ -230,17 +301,24 @@ public class Swarm extends javax.swing.JFrame {
             super.paintComponent(g);
             if(!spawned)
             {
-                //numBots must be a square number
-                int numBots = 81;
-                int sBots = (int)Math.sqrt(numBots);
-                int x = 105-(sBots-1)*5;
-                int y = 95-(sBots-1)*5;
-                int w = 5*sBots;
-                int h = w;
+                gradientColors = new Color[(int)MAX_GRADIENT];
+                for(int i = 0; i < MAX_GRADIENT; i++)
+                {
+                    gradientColors[i] = new Color(random.nextInt(256),random.nextInt(256),random.nextInt(256));
+                }
                 
-                int s = 1;
-                int sx = 110;
-                int sy = 90;
+                s = 2;
+                int sx = 200;
+                int sy = 150*s;
+                botSize = 5*s;
+                actInc = 50;
+                
+                //numBots must be a square number
+                int sBots = (int)Math.sqrt(numBots);
+                int x = sx-botSize-(sBots-1)*botSize;
+                int y = sy+botSize-(sBots-1)*botSize;
+                int w = botSize*sBots;
+                int h = w;
                 
                 img = readShape(s,s);
                 setSeed(sx,sy,s);
@@ -253,23 +331,15 @@ public class Swarm extends javax.swing.JFrame {
                     i += 1;
                 }
                 spawned = true;
-                
-                
-                for(int j = 0; j < 0; j++)
-                {
-                    act();
-                    actNum += 1;
-                }
             }
-//            for(Bot bot : IO.bots)
-//            {
-//                if(bot.state == State.MOVE_WHILE_OUTSIDE)
-//                {
-//                    System.out.println(bot.seqNum);
-//                }
-//            }
             
-            drawShape(g,img,110,0);
+            Font tr = new Font("helvetica", Font.PLAIN, 8);
+            g.setFont(tr);
+            
+            if(drawShape)
+            {
+                drawShape(g,img,200,60*s);
+            }
             drawBots(g);
         }
         
@@ -284,9 +354,11 @@ public class Swarm extends javax.swing.JFrame {
                 else
                 {
 //                    g.setColor(stateColors[bot.state.ordinal()]);
-                    g.setColor(gradientColors[bot.gradientValue]);
-//                    g.setColor(new Color((int)(bot.gradientValue/(MAX_GRADIENT+1)*255),150,0));
+//                    g.setColor(gradientColors[bot.gradientValue]);
+                    int c = (int)((bot.gradientValue/(MAX_GRADIENT+1))*255);
+                    g.setColor(new Color(c,0,100));
                 }
+                
                 if(bot.state == State.MOVE_WHILE_INSIDE)
                 {
                     g.drawRect((int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY(), botSize, botSize);
@@ -295,22 +367,23 @@ public class Swarm extends javax.swing.JFrame {
                 {
                     g.drawOval((int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY(), botSize, botSize);
                 }
-//                g.drawString(bot.gradientValue+"", (int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY());
+                g.drawString(bot.gradientValue+"", (int)IO.graphicsCoords.get(bot).getX()+2, 
+                             (int)IO.graphicsCoords.get(bot).getY()+7);
             }
         }
         
         //we set 4 seeds, one is the gradient seed
         public void setSeed(int x, int y, int s)
         {
-            int xIncrement = 5;
-            int yIncrement = 5;
+            int xIncrement = botSize;
+            int yIncrement = botSize;
             int seedCount = 0;
             
             for(int i = 0; i <= 1; i += 1)
             {
                 for(int j = 0; j <= 1; j += 1)
                 {
-                    Bot bot = new Bot(img, s, true);
+                    Bot bot = new Bot(img, s, true, botSize);
                     bot.localized = true;
                     
 //                    //this is the global coordinates
@@ -323,7 +396,7 @@ public class Swarm extends javax.swing.JFrame {
                     if(seedCount == 0)
                     {
                         px = 0;
-                        py = 5;
+                        py = botSize;
                     }
                     else if(seedCount == 1)
                     {
@@ -332,12 +405,12 @@ public class Swarm extends javax.swing.JFrame {
                     }
                     else if(seedCount == 2)
                     {
-                        px = 5;
-                        py = 5;
+                        px = botSize;
+                        py = botSize;
                     }
                     else
                     {
-                        px = 5;
+                        px = botSize;
                         py = 0;
                     }
                     bot.position = new Point2D.Double(px,py);
@@ -360,7 +433,7 @@ public class Swarm extends javax.swing.JFrame {
             {
                 for(int j = 0; j < yTimes; j++)
                 {
-                    Bot bot = new Bot(imgRep,s,false);
+                    Bot bot = new Bot(imgRep,s,false,botSize);
                     IO.bots.add(bot);
                     double gx = startX+botSize*i;
                     double gy = (startY+botSize*j);
@@ -383,7 +456,7 @@ public class Swarm extends javax.swing.JFrame {
                 {
                     if(shape[i][j] == 0)
                     {
-                        g.drawOval(j+tx, i+ty, 1, 1);
+                        g.drawRect(j+tx, i+ty, 1, 1);
                     }
                 }
             }
@@ -428,7 +501,7 @@ public class Swarm extends javax.swing.JFrame {
             BufferedImage image = null;
             try
             {
-                image = ImageIO.read(new File("src/R.bmp"));
+                image = ImageIO.read(new File(SHAPE_FILE));
                 image = scale(image,sx,sy);
             }
             catch(Exception e)
@@ -531,5 +604,8 @@ public class Swarm extends javax.swing.JFrame {
     private javax.swing.JPanel CustomPanel;
     private javax.swing.JLabel actNumber;
     private javax.swing.JButton nextButton;
+    private javax.swing.JButton restartButton;
+    private javax.swing.JButton startButton;
+    private javax.swing.JButton stopButton;
     // End of variables declaration//GEN-END:variables
 }
