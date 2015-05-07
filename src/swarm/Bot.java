@@ -163,6 +163,7 @@ public class Bot {
         {
             modified = true;
         }
+        
 //        ArrayList<Bot> neighbors = IO.getNeighbors(Bot.this);
 //        ArrayList<Bot> nList = new ArrayList<Bot>();
 //        for(Bot bot : neighbors)
@@ -304,7 +305,9 @@ public class Bot {
     {
         try
         {
-            System.out.println(seqNum+" "+gradientValue);
+            int v = valAt((int)position.getY(),(int)position.getX());
+            Point2D gCoords = IO.graphicsCoords.get(Bot.this);
+//            System.out.println(seqNum + "("+(int)position.getX()+","+(int)position.getY()+") (" + gCoords.getX() + "," + gCoords.getY() + ")" + v);
             if(state == State.START)
             {
                 if(seed)
@@ -367,8 +370,8 @@ public class Bot {
             else if(state == State.MOVE_WHILE_OUTSIDE)
             {
                 int val = valAt((int)position.getY(),(int)position.getX());
-//                    System.out.println("outside "+id);
-//                    System.out.println("("+(int)position.getX()+","+(int)position.getY()+") " + val);
+//                System.out.println("outside "+id);
+//                System.out.println("("+(int)position.getX()+","+(int)position.getY()+") " + val);
                 if(val == 0)
                 {
                     state = State.MOVE_WHILE_INSIDE;
@@ -388,17 +391,17 @@ public class Bot {
             else if(state == State.MOVE_WHILE_INSIDE)
             {
                 int val = valAt((int)position.getY(),(int)position.getX());
-//                    System.out.println("inside");
-//                    System.out.println("("+(int)position.getX()+","+(int)position.getY()+") " + val);
+//                System.out.println("inside");
+//                System.out.println("("+(int)position.getX()+","+(int)position.getY()+") " + val);
 
                 if(val == 1)
                 {   
-                    System.out.println("JOINED SHAPE 1");
+//                    System.out.println("JOINED SHAPE 1");
                     state = State.JOINED_SHAPE;
                 }
                 if(gradientValue <= IO.closestNeighbor(Bot.this).gradientValue)
                 {
-                    System.out.println("JOINED SHAPE 2");
+//                    System.out.println("JOINED SHAPE 2");
                     state = State.JOINED_SHAPE;
                 }
 
@@ -416,16 +419,16 @@ public class Bot {
             else if(state == State.JOINED_SHAPE)
             {
                 stopEdgeFollow = true;
-                System.out.println("EDGE FOLLOW STOPPED");
+//                System.out.println("EDGE FOLLOW STOPPED");
 
                 stopLocalization = true;
-                System.out.println("LOCALIZATION STOPPED");
+//                System.out.println("LOCALIZATION STOPPED");
 
                 stopGradientFormation = true;
-                System.out.println("GRADIENT FORMATION STOPPED");
+//                System.out.println("GRADIENT FORMATION STOPPED");
 
                 stopIdGen = true;
-                System.out.println("ID GEN STOPPED");
+//                System.out.println("ID GEN STOPPED");
                 
                 if(!seed)
                 {
@@ -433,7 +436,7 @@ public class Bot {
                 }
                 stationary = true;
                 ended = true;
-                System.out.println(seqNum + " ended");
+//                System.out.println(seqNum + " ended");
             }
         }
         catch(Exception e)

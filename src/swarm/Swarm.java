@@ -83,7 +83,7 @@ public class Swarm extends javax.swing.JFrame {
                 }
             }
         }
-        System.out.println("=========================");
+//        System.out.println("=========================");
     }
         
     /**
@@ -150,7 +150,7 @@ public class Swarm extends javax.swing.JFrame {
         int botSize = 5;
         int[][] img;
         
-        Timer timer;
+        Timer drawTimer;
         ArrayList<Thread> botThreads;
         
         public SimPanel()
@@ -161,12 +161,16 @@ public class Swarm extends javax.swing.JFrame {
             IO.botCoords = new HashMap<Bot,Point2D>(nBots);
             IO.graphicsCoords = new HashMap<Bot,Point2D>(nBots);
             botThreads = new ArrayList<Thread>(nBots);
-            timer = new Timer(10, taskPerformer);
-            timer.start();
+            drawTimer = new Timer(10, taskPerformer);
+            drawTimer.start();
         }
         
         ActionListener taskPerformer = new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
+                for(int i = 0; i < 5; i++)
+                {
+                    act();
+                }
                 repaint();
             }
         };
@@ -177,7 +181,7 @@ public class Swarm extends javax.swing.JFrame {
             if(!spawned)
             {
                 //numBots must be a square number
-                int numBots = 49;
+                int numBots = 81;
                 int sBots = (int)Math.sqrt(numBots);
                 int x = 105-(sBots-1)*5;
                 int y = 95-(sBots-1)*5;
@@ -200,7 +204,6 @@ public class Swarm extends javax.swing.JFrame {
                 }
                 spawned = true;
             }
-            act();
             
             drawShape(g,img,110,0);
             drawBots(g);
@@ -314,7 +317,7 @@ public class Swarm extends javax.swing.JFrame {
                     IO.graphicsCoords.put(bot, new Point2D.Double(gx,gy));
                     
                     double x = gx-sx;
-                    double y = gy-sy;
+                    double y = -(gy-sy);
                     IO.botCoords.put(bot,new Point2D.Double(x,y));
                 }
             }
@@ -375,7 +378,7 @@ public class Swarm extends javax.swing.JFrame {
             BufferedImage image = null;
             try
             {
-                image = ImageIO.read(new File("src/shape.bmp"));
+                image = ImageIO.read(new File("src/R.bmp"));
                 image = scale(image,sx,sy);
             }
             catch(Exception e)
