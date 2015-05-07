@@ -97,8 +97,15 @@ public class Swarm extends javax.swing.JFrame {
 
         CustomPanel = new SimPanel();
         nextButton = new javax.swing.JButton();
+        actNumber = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        CustomPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                CustomPanelMouseClicked(evt);
+            }
+        });
 
         nextButton.setText("Next");
         nextButton.addActionListener(new java.awt.event.ActionListener() {
@@ -114,12 +121,18 @@ public class Swarm extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, CustomPanelLayout.createSequentialGroup()
                 .addGap(0, 325, Short.MAX_VALUE)
                 .addComponent(nextButton))
+            .addGroup(CustomPanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(actNumber, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         CustomPanelLayout.setVerticalGroup(
             CustomPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(CustomPanelLayout.createSequentialGroup()
                 .addComponent(nextButton)
-                .addGap(0, 271, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 248, Short.MAX_VALUE)
+                .addComponent(actNumber, javax.swing.GroupLayout.PREFERRED_SIZE, 17, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -137,9 +150,28 @@ public class Swarm extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void nextButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextButtonActionPerformed
-        act();
+        for(int i = 0; i < actInc; i++)
+        {
+            act();
+        }
     }//GEN-LAST:event_nextButtonActionPerformed
+
+    private void CustomPanelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_CustomPanelMouseClicked
+        int x = evt.getX();
+        int y = evt.getY();
+        for(Bot bot : IO.graphicsCoords.keySet())
+        {
+            Point2D pt = IO.graphicsCoords.get(bot);
+            int tol = 3;
+            if(Math.abs(pt.getX()-x) < tol && Math.abs(pt.getY()-y) < tol)
+            {
+                System.out.println(bot.seqNum);
+            }
+        }
+    }//GEN-LAST:event_CustomPanelMouseClicked
     
+    int actInc = 10;
+        
     class SimPanel extends JPanel
     {
         int RAND_SEED = 20;
@@ -149,9 +181,13 @@ public class Swarm extends javax.swing.JFrame {
         int nBots = 1000;
         int botSize = 5;
         int[][] img;
+        double MAX_GRADIENT;
         
         Timer drawTimer;
         ArrayList<Thread> botThreads;
+        Color[] gradientColors;
+        Color[] stateColors;
+        int actNum = 0;
         
         public SimPanel()
         {
@@ -161,16 +197,30 @@ public class Swarm extends javax.swing.JFrame {
             IO.botCoords = new HashMap<Bot,Point2D>(nBots);
             IO.graphicsCoords = new HashMap<Bot,Point2D>(nBots);
             botThreads = new ArrayList<Thread>(nBots);
+            MAX_GRADIENT = 20;
+            gradientColors = new Color[(int)MAX_GRADIENT];
+            for(int i = 0; i < MAX_GRADIENT; i++)
+            {
+                gradientColors[i] = new Color(random.nextInt(256),random.nextInt(256),random.nextInt(256));
+            }
+            stateColors = new Color[State.values().length];
+            stateColors[0] = Color.black;
+            stateColors[1] = Color.red;
+            stateColors[2] = Color.blue;
+            stateColors[3] = Color.orange;
+            stateColors[4] = Color.green;
             drawTimer = new Timer(10, taskPerformer);
             drawTimer.start();
         }
         
         ActionListener taskPerformer = new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                for(int i = 0; i < 5; i++)
+                for(int i = 0; i < actInc; i++)
                 {
                     act();
+                    actNum += 1;
                 }
+                actNumber.setText(actNum+"");
                 repaint();
             }
         };
@@ -203,7 +253,21 @@ public class Swarm extends javax.swing.JFrame {
                     i += 1;
                 }
                 spawned = true;
+                
+                
+                for(int j = 0; j < 0; j++)
+                {
+                    act();
+                    actNum += 1;
+                }
             }
+//            for(Bot bot : IO.bots)
+//            {
+//                if(bot.state == State.MOVE_WHILE_OUTSIDE)
+//                {
+//                    System.out.println(bot.seqNum);
+//                }
+//            }
             
             drawShape(g,img,110,0);
             drawBots(g);
@@ -219,23 +283,9 @@ public class Swarm extends javax.swing.JFrame {
                 }
                 else
                 {
-//                    if(bot.gradientValue == 1)
-//                    {
-//                        g.setColor(Color.BLUE);
-//                    }
-//                    else if(bot.gradientValue == 2)
-//                    {
-//                        g.setColor(Color.RED);
-//                    }
-//                    else if(bot.gradientValue == 3)
-//                    {
-//                        g.setColor(Color.PINK);
-//                    }
-//                    else
-//                    {
-//                        g.setColor(Color.black);
-//                    }
-                    g.setColor(Color.red);
+//                    g.setColor(stateColors[bot.state.ordinal()]);
+                    g.setColor(gradientColors[bot.gradientValue]);
+//                    g.setColor(new Color((int)(bot.gradientValue/(MAX_GRADIENT+1)*255),150,0));
                 }
                 if(bot.state == State.MOVE_WHILE_INSIDE)
                 {
@@ -479,6 +529,7 @@ public class Swarm extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel CustomPanel;
+    private javax.swing.JLabel actNumber;
     private javax.swing.JButton nextButton;
     // End of variables declaration//GEN-END:variables
 }

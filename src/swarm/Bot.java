@@ -136,7 +136,9 @@ public class Bot {
             {
                 if(IO.measuredDistance(Bot.this,neighbor) < G)
                 {
-                    if(neighbor.gradientValue < gradientValue)
+                    if(neighbor.gradientValue < gradientValue 
+//                       && neighbor.stationary
+                      )
                     {
                         gradientValue = neighbor.gradientValue;
                     }
@@ -156,13 +158,8 @@ public class Bot {
 //                System.out.println("LOCALIZE");
         boolean modified = false;
         Point2D oldPos = (Point2D)position.clone();
-        position = IO.botCoords.get(Bot.this);
         
-        if(Math.abs(oldPos.getX()-position.getX()) > IO.epsilon || 
-           Math.abs(oldPos.getY()-position.getY()) > IO.epsilon)
-        {
-            modified = true;
-        }
+        position = IO.botCoords.get(Bot.this);
         
 //        ArrayList<Bot> neighbors = IO.getNeighbors(Bot.this);
 //        ArrayList<Bot> nList = new ArrayList<Bot>();
@@ -194,6 +191,13 @@ public class Bot {
 ////                                "("+df.format(position.getX())+","+df.format(position.getY())+")");
 //            }
 //        }
+        
+        if(Math.abs(oldPos.getX()-position.getX()) > IO.epsilon || 
+           Math.abs(oldPos.getY()-position.getY()) > IO.epsilon)
+        {
+            modified = true;
+        }
+        
         return modified;
     }
         
@@ -306,8 +310,8 @@ public class Bot {
         try
         {
             int v = valAt((int)position.getY(),(int)position.getX());
-            Point2D gCoords = IO.graphicsCoords.get(Bot.this);
-//            System.out.println(seqNum + "("+(int)position.getX()+","+(int)position.getY()+") (" + gCoords.getX() + "," + gCoords.getY() + ")" + v);
+//            Point2D gCoords = IO.graphicsCoords.get(Bot.this);
+//            System.out.println(seqNum + "("+(int)position.getX()+","+(int)position.getY()+")" + gradientValue);
             if(state == State.START)
             {
                 if(seed)
@@ -339,29 +343,50 @@ public class Bot {
                     int h = 0;
                     for(Bot bot : neighbors)
                     {
-                        if(bot.gradientValue > h)
+                        if(bot.gradientValue > h && bot.state != State.JOINED_SHAPE)
                         {
                             h = bot.gradientValue;
                         }
                     }
                     if(gradientValue > h)
                     {
+                        if(!stationary)
+                        {
+                            System.out.println("1 " + id + " " + h);
+                        }
+                        if(seqNum == 45)
+                        {
+                            System.out.println();
+                        }
                         state = State.MOVE_WHILE_OUTSIDE;
                     }
                     else if(gradientValue == h)
                     {
+                        if(!stationary)
+                        {
+                            System.out.println("2 " + id + " " + h);
+                        }
                         boolean condition = true;
                         for(Bot bot : neighbors)
                         {
                             if(gradientValue == bot.gradientValue && 
-                               id <= bot.id)
+                               id <= bot.id && 
+                               bot.state != State.JOINED_SHAPE)
                             {
+                               if(seqNum == 45)
+                               {   
+                                   System.out.println();
+                               }
                                 condition = false;
                                 break;
                             }
                         }
                         if(condition)
                         {
+                            if(seqNum == 45)
+                            {
+                                System.out.println();
+                            }
                             state = State.MOVE_WHILE_OUTSIDE;
                         }
                     }
@@ -430,10 +455,6 @@ public class Bot {
                 stopIdGen = true;
 //                System.out.println("ID GEN STOPPED");
                 
-                if(!seed)
-                {
-                    gradientValue = 0;
-                }
                 stationary = true;
                 ended = true;
 //                System.out.println(seqNum + " ended");
