@@ -14,13 +14,9 @@ import java.util.Set;
  */
 public class Bot {
     
-    public enum State {
-        START,WAIT_TO_MOVE,MOVE_WHILE_OUTSIDE,
-        MOVE_WHILE_INSIDE,JOINED_SHAPE;
-    }
-    
     //robot's position is based on its localization
     //algorithm, position is not known a priori
+    Random random;
     Point2D position;
     boolean seed;
     int[][] img;
@@ -74,7 +70,7 @@ public class Bot {
         for(Bot neighbor : neighbors)
         {
             double dist = IO.measuredDistance(Bot.this,neighbor);
-            if(dist < current)
+            if(dist < current && neighbor.stationary)
             {
                 current = dist;
             }
@@ -124,8 +120,10 @@ public class Bot {
     final int GRADIENT_MAX = 1000; //max gradient == maxbots
     final int G = 10;
 
-    public void GradientFormation()
+    public boolean GradientFormation()
     {
+        boolean modified = false;
+        int oldGradient = gradientValue;
         if(gradientSeed)
         {
             gradientValue = 0;
@@ -145,13 +143,26 @@ public class Bot {
                 }
             }
             gradientValue += 1;
+            if(gradientValue != oldGradient)
+            {
+                modified = true;
+            }
         }
+        return modified;
     }
     
-    public void Localization()
+    public boolean Localization()
     {
 //                System.out.println("LOCALIZE");
+        boolean modified = false;
+        Point2D oldPos = (Point2D)position.clone();
         position = IO.botCoords.get(Bot.this);
+        
+        if(Math.abs(oldPos.getX()-position.getX()) > IO.epsilon || 
+           Math.abs(oldPos.getY()-position.getY()) > IO.epsilon)
+        {
+            modified = true;
+        }
 //        ArrayList<Bot> neighbors = IO.getNeighbors(Bot.this);
 //        ArrayList<Bot> nList = new ArrayList<Bot>();
 //        for(Bot bot : neighbors)
@@ -182,6 +193,7 @@ public class Bot {
 ////                                "("+df.format(position.getX())+","+df.format(position.getY())+")");
 //            }
 //        }
+        return modified;
     }
         
     //http://stackoverflow.com/questions/12548312/find-all-subsets-of-length-k-in-an-array
@@ -247,7 +259,6 @@ public class Bot {
     {
         return (p2.getY()-p1.getY())*(p1.getX()-p2.getX()) != (p3.getY()-p2.getY())*(p2.getX()-p1.getX());
     }
-    
 
     boolean idGenerated = false;
 
@@ -256,7 +267,7 @@ public class Bot {
         if(!idGenerated)
         {
             int randSeed = IO.getRandomSeed();
-            Random random = new Random(randSeed);
+            random = new Random(randSeed);
             id = random.nextInt(10000);
             idGenerated = true;
         }
@@ -285,27 +296,6 @@ public class Bot {
             e.printStackTrace();
         }
     }
-    
-    public void loop()
-    {
-        if(!stopGradientFormation)
-        {
-            GradientFormation();
-        }
-        if(!stopLocalization)
-        {
-            Localization();
-        }
-        if(!stopIdGen)
-        {
-            GenerateLocallyUniqueID();
-        }
-        if(!stopEdgeFollow)
-        {
-            EdgeFollow();
-        }
-        delay();
-    }
 
     int yieldDistance = 10;
     State state = State.START;
@@ -314,135 +304,137 @@ public class Bot {
     {
         try
         {
-//            while(true)
-//            {
-                loop();
-                if(state == State.START)
+            System.out.println(seqNum+" "+gradientValue);
+            if(state == State.START)
+            {
+                if(seed)
                 {
-                    if(seed)
+                    state = State.JOINED_SHAPE;
+                }
+                else
+                {
+                    stopGradientFormation = false;
+                    stopLocalization = false;
+                    stopIdGen = false;
+                    state = State.WAIT_TO_MOVE;
+                }
+            }
+            else if(state == State.WAIT_TO_MOVE)
+            {
+                ArrayList<Bot> neighbors = IO.getNeighbors(Bot.this);
+                boolean movingNeighbors = false;
+                for(Bot bot : neighbors)
+                {
+                    if(!bot.stationary)
                     {
-                        state = State.JOINED_SHAPE;
-                    }
-                    else
-                    {
-                        stopGradientFormation = false;
-                        stopLocalization = false;
-                        stopIdGen = false;
-                        state = State.WAIT_TO_MOVE;
+                        movingNeighbors = true;
+                        break;
                     }
                 }
-                else if(state == State.WAIT_TO_MOVE)
+                if(!movingNeighbors)
                 {
-                    ArrayList<Bot> neighbors = IO.getNeighbors(Bot.this);
-                    boolean movingNeighbors = false;
+                    int h = 0;
                     for(Bot bot : neighbors)
                     {
-                        if(!bot.stationary)
+                        if(bot.gradientValue > h)
                         {
-                            movingNeighbors = true;
-                            break;
+                            h = bot.gradientValue;
                         }
                     }
-                    if(!movingNeighbors)
+                    if(gradientValue > h)
                     {
-                        int h = 0;
+                        state = State.MOVE_WHILE_OUTSIDE;
+                    }
+                    else if(gradientValue == h)
+                    {
+                        boolean condition = true;
                         for(Bot bot : neighbors)
                         {
-                            if(h < bot.gradientValue)
+                            if(gradientValue == bot.gradientValue && 
+                               id <= bot.id)
                             {
-                                h = bot.gradientValue;
+                                condition = false;
+                                break;
                             }
                         }
-                        if(gradientValue > h)
+                        if(condition)
                         {
                             state = State.MOVE_WHILE_OUTSIDE;
                         }
-                        else if(gradientValue == h)
-                        {
-                            boolean condition = true;
-                            for(Bot bot : neighbors)
-                            {
-                                if(gradientValue == bot.gradientValue && id <= bot.id)
-                                {
-                                    condition = false;
-                                    break;
-                                }
-                            }
-                            if(condition)
-                            {
-                                state = State.MOVE_WHILE_OUTSIDE;
-                            }
-                        }
                     }
                 }
-                else if(state == State.MOVE_WHILE_OUTSIDE)
-                {
-                    int val = valAt((int)position.getY(),(int)position.getX());
+            }
+            else if(state == State.MOVE_WHILE_OUTSIDE)
+            {
+                int val = valAt((int)position.getY(),(int)position.getX());
 //                    System.out.println("outside "+id);
 //                    System.out.println("("+(int)position.getX()+","+(int)position.getY()+") " + val);
-                    if(val == 0)
-                    {
-                        state = State.MOVE_WHILE_INSIDE;
-                    }
-                    
-                    if(distToNearestEdgeFollowingBot() > yieldDistance)
-                    {
-                        stopEdgeFollow = false;
-                        stationary = false;
-                    }
-                    else
-                    {
-                        stopEdgeFollow = true;
-                        stationary = true;
-                    }
-                }
-                else if(state == State.MOVE_WHILE_INSIDE)
+                if(val == 0)
                 {
-                    int val = valAt((int)position.getY(),(int)position.getX());
+                    state = State.MOVE_WHILE_INSIDE;
+                }
+
+                if(distToNearestEdgeFollowingBot() > yieldDistance)
+                {
+                    stopEdgeFollow = false;
+                    stationary = false;
+                }
+                else
+                {
+                    stopEdgeFollow = true;
+                    stationary = true;
+                }
+            }
+            else if(state == State.MOVE_WHILE_INSIDE)
+            {
+                int val = valAt((int)position.getY(),(int)position.getX());
 //                    System.out.println("inside");
 //                    System.out.println("("+(int)position.getX()+","+(int)position.getY()+") " + val);
-                    
-                    if(val == 1)
-                    {   
-                        System.out.println("JOINED SHAPE 1");
-                        state = State.JOINED_SHAPE;
-                    }
-                    if(gradientValue <= IO.closestNeighbor(Bot.this).gradientValue)
-                    {
-                        System.out.println("JOINED SHAPE 2");
-                        state = State.JOINED_SHAPE;
-                    }
-                    
-                    if(distToNearestEdgeFollowingBot() > yieldDistance)
-                    {
-                        stopEdgeFollow = false;
-                        stationary = false;
-                    }
-                    else
-                    {
-                        stopEdgeFollow = true;
-                        stationary = true;
-                    }
-                }   
-                else if(state == State.JOINED_SHAPE)
-                {
-                    stationary = true;
-                    stopEdgeFollow = true;
-                    System.out.println("EDGE FOLLOW STOPPED");
-                    
-                    stopLocalization = true;
-                    System.out.println("LOCALIZATION STOPPED");
-                    
-                    stopGradientFormation = true;
-                    System.out.println("GRADIENT FORMATION STOPPED");
-                    
-                    stopIdGen = true;
-                    System.out.println("ID GEN STOPPED");
-                    ended = true;
-                    System.out.println(seqNum + " ended");
-//                    break;
+
+                if(val == 1)
+                {   
+                    System.out.println("JOINED SHAPE 1");
+                    state = State.JOINED_SHAPE;
                 }
-//            }
+                if(gradientValue <= IO.closestNeighbor(Bot.this).gradientValue)
+                {
+                    System.out.println("JOINED SHAPE 2");
+                    state = State.JOINED_SHAPE;
+                }
+
+                if(distToNearestEdgeFollowingBot() > yieldDistance)
+                {
+                    stopEdgeFollow = false;
+                    stationary = false;
+                }
+                else
+                {
+                    stopEdgeFollow = true;
+                    stationary = true;
+                }
+            }   
+            else if(state == State.JOINED_SHAPE)
+            {
+                stopEdgeFollow = true;
+                System.out.println("EDGE FOLLOW STOPPED");
+
+                stopLocalization = true;
+                System.out.println("LOCALIZATION STOPPED");
+
+                stopGradientFormation = true;
+                System.out.println("GRADIENT FORMATION STOPPED");
+
+                stopIdGen = true;
+                System.out.println("ID GEN STOPPED");
+                
+                if(!seed)
+                {
+                    gradientValue = 0;
+                }
+                stationary = true;
+                ended = true;
+                System.out.println(seqNum + " ended");
+            }
         }
         catch(Exception e)
         {

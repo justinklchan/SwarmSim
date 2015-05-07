@@ -29,6 +29,63 @@ public class Swarm extends javax.swing.JFrame {
         initComponents();
     }
 
+    public void act()
+    {   
+        for(Bot bot : IO.bots)
+        {
+            if(!bot.ended && !bot.stopIdGen)
+            {
+                bot.GenerateLocallyUniqueID();
+            }
+        }
+        
+        boolean stabilizedGradient = true;
+        for(Bot bot : IO.bots)
+        {
+            if(!bot.ended && !bot.stopGradientFormation)
+            {
+                boolean modified = bot.GradientFormation();
+                if(modified == true)
+                {
+                    stabilizedGradient = false;
+                }
+            }
+        }
+        
+        boolean stabilizedLocalization = true;
+        for(Bot bot : IO.bots)
+        {
+            if(!bot.ended && !bot.stopLocalization)
+            {
+                boolean modified = bot.Localization();
+                if(modified == true)
+                {
+                    stabilizedLocalization = false;
+                }
+            }
+        }
+        
+        if(stabilizedGradient && stabilizedLocalization)
+        {
+            for(Bot bot : IO.bots)
+            {
+                if(!bot.ended && !bot.stopEdgeFollow)
+                {
+                    bot.EdgeFollow();
+                }
+            }
+            
+            for(Bot bot : IO.bots)
+            {
+                if(!bot.ended)
+                {
+                    bot.run();
+                }
+            }
+        }
+        System.out.println("=========================");
+    }
+        
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -39,18 +96,30 @@ public class Swarm extends javax.swing.JFrame {
     private void initComponents() {
 
         CustomPanel = new SimPanel();
+        nextButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        nextButton.setText("Next");
+        nextButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                nextButtonActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout CustomPanelLayout = new javax.swing.GroupLayout(CustomPanel);
         CustomPanel.setLayout(CustomPanelLayout);
         CustomPanelLayout.setHorizontalGroup(
             CustomPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, CustomPanelLayout.createSequentialGroup()
+                .addGap(0, 325, Short.MAX_VALUE)
+                .addComponent(nextButton))
         );
         CustomPanelLayout.setVerticalGroup(
             CustomPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
+            .addGroup(CustomPanelLayout.createSequentialGroup()
+                .addComponent(nextButton)
+                .addGap(0, 271, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -66,6 +135,10 @@ public class Swarm extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void nextButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextButtonActionPerformed
+        act();
+    }//GEN-LAST:event_nextButtonActionPerformed
     
     class SimPanel extends JPanel
     {
@@ -104,7 +177,7 @@ public class Swarm extends javax.swing.JFrame {
             if(!spawned)
             {
                 //numBots must be a square number
-                int numBots = 4;
+                int numBots = 49;
                 int sBots = (int)Math.sqrt(numBots);
                 int x = 105-(sBots-1)*5;
                 int y = 95-(sBots-1)*5;
@@ -118,6 +191,7 @@ public class Swarm extends javax.swing.JFrame {
                 img = readShape(s,s);
                 setSeed(sx,sy,s);
                 packSpawnInArea(sx, sy+botSize, x, y, w, h, img, s);
+                
                 int i = 0;
                 for(Bot bot : IO.bots)
                 {
@@ -126,20 +200,12 @@ public class Swarm extends javax.swing.JFrame {
                 }
                 spawned = true;
             }
-            
-            for(Bot bot : IO.bots)
-            {
-                if(!bot.ended)
-                {
-                    bot.run();
-                }
-            }
+            act();
             
             drawShape(g,img,110,0);
             drawBots(g);
         }
         
-        //TODO: this method should be synchronized
         public void drawBots(Graphics g)
         {
             for(Bot bot : IO.bots)
@@ -150,36 +216,32 @@ public class Swarm extends javax.swing.JFrame {
                 }
                 else
                 {
-                   // bots get redder, the nearer they are to the gradient seed
-//                    int maxGradientValue = 0;
-//                    for(Bot b : IO.bots)
+//                    if(bot.gradientValue == 1)
 //                    {
-//                        if(b.gradientValue > maxGradientValue)
-//                        {
-//                            maxGradientValue = b.gradientValue;
-//                        }
+//                        g.setColor(Color.BLUE);
 //                    }
-//                    
-//                    int cVal = 0;
-//                    if(maxGradientValue != 0)
+//                    else if(bot.gradientValue == 2)
 //                    {
-//                        cVal = 255-((bot.gradientValue/maxGradientValue)*255);
+//                        g.setColor(Color.RED);
 //                    }
-                    g.setColor(new Color(255,0,0));
+//                    else if(bot.gradientValue == 3)
+//                    {
+//                        g.setColor(Color.PINK);
+//                    }
+//                    else
+//                    {
+//                        g.setColor(Color.black);
+//                    }
+                    g.setColor(Color.red);
                 }
-//                if(bot.gradientValue == 1)
-//                {
-//                    g.setColor(Color.BLUE);
-//                }
-//                if(bot.gradientValue == 2)
-//                {
-//                    g.setColor(Color.RED);
-//                }
-//                if(bot.gradientValue == 3)
-//                {
-//                    g.setColor(Color.PINK);
-//                }
-                g.drawOval((int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY(), botSize, botSize);
+                if(bot.state == State.MOVE_WHILE_INSIDE)
+                {
+                    g.drawRect((int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY(), botSize, botSize);
+                }
+                else
+                {
+                    g.drawOval((int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY(), botSize, botSize);
+                }
 //                g.drawString(bot.gradientValue+"", (int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY());
             }
         }
@@ -414,5 +476,6 @@ public class Swarm extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel CustomPanel;
+    private javax.swing.JButton nextButton;
     // End of variables declaration//GEN-END:variables
 }
