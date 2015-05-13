@@ -256,22 +256,29 @@ public class Swarm extends javax.swing.JFrame {
             super();
             
             //DEMO 1 holey object
-            SHAPE_FILE = "src/holes.bmp";
-            drawShape = true;
-            MAX_GRADIENT = 50;
+//            SHAPE_FILE = "src/holes.bmp";
+//            drawShape = true;
+//            MAX_GRADIENT = 50;
+//            numBots = (int)Math.pow(11,2);
+            
+            //DEMO 2 draw R
+            SHAPE_FILE = "src/R.bmp";
+            drawShape = false;
+            MAX_GRADIENT = 30;
             numBots = (int)Math.pow(11,2);
             
-//            //DEMO 2 draw R
-//            SHAPE_FILE = "src/R.bmp";
-//            drawShape = false;
-//            MAX_GRADIENT = 30;
-//            numBots = (int)Math.pow(11,2);
-//            
-//            //DEMO 3 (too many bots)
+            //DEMO 3 (too many bots)
 //            SHAPE_FILE = "src/R.bmp";
 //            drawShape = false;
 //            MAX_GRADIENT = 30;
 //            numBots = (int)Math.pow(12,2);
+            
+            //DEMO 4 draw olympic
+//            SHAPE_FILE = "src/olympic.bmp";
+//            drawShape = true;
+//            MAX_GRADIENT = 30;
+//            numBots = (int)Math.pow(11,2);
+            
             random = new Random(RAND_SEED);
             restart();
             stateColors = new Color[State.values().length];
@@ -311,7 +318,7 @@ public class Swarm extends javax.swing.JFrame {
                 int sx = 200;
                 int sy = 150*s;
                 botSize = 5*s;
-                actInc = 50;
+                actInc = 25;
                 
                 //numBots must be a square number
                 int sBots = (int)Math.sqrt(numBots);

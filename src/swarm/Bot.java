@@ -159,7 +159,7 @@ public class Bot {
     
     public boolean Localization()
     {
-//                System.out.println("LOCALIZE");
+//        System.out.println("LOCALIZE");
         boolean modified = false;
         Point2D oldPos = (Point2D)position.clone();
         
@@ -367,8 +367,7 @@ public class Bot {
                         for(Bot bot : neighbors)
                         {
                             if(gradientValue == bot.gradientValue && 
-                               id <= bot.id && 
-                               bot.state != State.JOINED_SHAPE)
+                               id <= bot.id)
                             {
                                 condition = false;
                                 break;
