@@ -14,6 +14,10 @@ import java.util.Set;
  */
 public class Bot {
     
+    static int BLACK = 0;
+    static int WHITE = 1;
+    static int RED = 2;
+    
     //robot's position is based on its localization
     //algorithm, position is not known a priori
     Random random;
@@ -77,6 +81,23 @@ public class Bot {
             if(dist < current && neighbor.stationary)
             {
                 current = dist;
+            }
+        }
+        
+        if(current != DISTANCE_MAX)
+        {
+            int startX = (int)(position.getX()-15);
+            int startY = (int)(position.getY()-15);
+            for(int i = startX; i < startX+15; i++)
+            {
+                for(int j = startY; j < startY+15; j++)
+                {
+                    double dist = position.distance(i, j)+bSize/2;
+                    if(valAt(j,i) == RED && dist < current)
+                    {
+                        current = dist;
+                    }
+                }
             }
         }
         
@@ -351,18 +372,10 @@ public class Bot {
                     }
                     if(gradientValue > h)
                     {
-                        if(!stationary)
-                        {
-                            System.out.println("1 " + id + " " + h);
-                        }
                         state = State.MOVE_WHILE_OUTSIDE;
                     }
                     else if(gradientValue == h)
                     {
-                        if(!stationary)
-                        {
-                            System.out.println("2 " + id + " " + h);
-                        }
                         boolean condition = true;
                         for(Bot bot : neighbors)
                         {
@@ -385,7 +398,7 @@ public class Bot {
                 int val = valAt((int)position.getY(),(int)position.getX());
 //                System.out.println("outside "+id);
 //                System.out.println("("+(int)position.getX()+","+(int)position.getY()+") " + val);
-                if(val == 0)
+                if(val == BLACK)
                 {
                     state = State.MOVE_WHILE_INSIDE;
                 }
@@ -407,7 +420,7 @@ public class Bot {
 //                System.out.println("inside");
 //                System.out.println("("+(int)position.getX()+","+(int)position.getY()+") " + val);
 
-                if(val == 1)
+                if(val == WHITE)
                 {   
 //                    System.out.println("JOINED SHAPE 1");
                     state = State.JOINED_SHAPE;
@@ -478,7 +491,7 @@ public class Bot {
     {
         if(x < 0 || y < 0 || y >= img.length || x >= img[0].length)
         {
-            return 1;
+            return WHITE;
         }
         else
         {

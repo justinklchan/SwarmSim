@@ -23,6 +23,9 @@ import javax.swing.Timer;
  */
 public class Swarm extends javax.swing.JFrame {
 
+    static int BLACK = 0;
+    static int WHITE = 1;
+    static int RED = 2;
     /**
      * Creates new form Swarm
      */
@@ -256,16 +259,16 @@ public class Swarm extends javax.swing.JFrame {
             super();
             
             //DEMO 1 holey object
-//            SHAPE_FILE = "src/holes.bmp";
-//            drawShape = true;
-//            MAX_GRADIENT = 50;
-//            numBots = (int)Math.pow(11,2);
+            SHAPE_FILE = "src/holes-colored.bmp";
+            drawShape = true;
+            MAX_GRADIENT = 50;
+            numBots = (int)Math.pow(20,2);
             
             //DEMO 2 draw R
-            SHAPE_FILE = "src/R.bmp";
-            drawShape = false;
-            MAX_GRADIENT = 30;
-            numBots = (int)Math.pow(11,2);
+//            SHAPE_FILE = "src/R.bmp";
+//            drawShape = true;
+//            MAX_GRADIENT = 30;
+//            numBots = (int)Math.pow(11,2);
             
             //DEMO 3 (too many bots)
 //            SHAPE_FILE = "src/R.bmp";
@@ -318,14 +321,15 @@ public class Swarm extends javax.swing.JFrame {
                 int sx = 200;
                 int sy = 150*s;
                 botSize = 5*s;
-                actInc = 25;
+                actInc = 10;
                 
-                //numBots must be a square number
-                int sBots = (int)Math.sqrt(numBots);
-                int x = sx-botSize-(sBots-1)*botSize;
-                int y = sy+botSize-(sBots-1)*botSize;
-                int w = botSize*sBots;
-                int h = w;
+                int wBots = 11;
+                int hBots = 11;
+                int w = botSize*wBots;
+                int h = botSize*hBots;
+                
+                int x = sx-botSize-(wBots-1)*botSize;
+                int y = sy+botSize-(hBots-1)*botSize;
                 
                 img = readShape(s,s);
                 setSeed(sx,sy,s);
@@ -363,7 +367,7 @@ public class Swarm extends javax.swing.JFrame {
 //                    g.setColor(stateColors[bot.state.ordinal()]);
 //                    g.setColor(gradientColors[bot.gradientValue]);
                     int c = (int)((bot.gradientValue/(MAX_GRADIENT+1))*255);
-                    g.setColor(new Color(c,0,100));
+                    g.setColor(new Color(0,0,255));
                 }
                 
                 if(bot.state == State.MOVE_WHILE_INSIDE)
@@ -456,13 +460,20 @@ public class Swarm extends javax.swing.JFrame {
         //draw shape
         public void drawShape(Graphics g, int[][] shape, int tx, int ty)
         {
-            g.setColor(Color.black);
             for(int i = 0; i < shape.length; i++)
             {
                 for(int j = 0; j < shape[i].length; j++)
                 {
-                    if(shape[i][j] == 0)
+                    if(shape[i][j] == BLACK || shape[i][j] == RED)
                     {
+                        if(shape[i][j] == RED)
+                        {
+                            g.setColor(Color.red);
+                        }
+                        else if(shape[i][j] == BLACK)
+                        {
+                            g.setColor(Color.black);
+                        }
                         g.drawRect(j+tx, i+ty, 1, 1);
                     }
                 }
@@ -520,7 +531,7 @@ public class Swarm extends javax.swing.JFrame {
             {
                 for(int j = 0; j < image.getWidth(); j++)
                 {
-                    shape[i][j] = 1;
+                    shape[i][j] = WHITE;
                 }
             }
             
@@ -532,7 +543,11 @@ public class Swarm extends javax.swing.JFrame {
                     Color c = convertToColor(image.getRGB(i, j));
                     if(c.equals(Color.black))
                     {
-                        shape[j][i] = 0;
+                        shape[j][i] = BLACK;
+                    }
+                    else if(c.getRed()>c.getGreen())
+                    {
+                        shape[j][i] = RED;
                     }
                 }
             }
