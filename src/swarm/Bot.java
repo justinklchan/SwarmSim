@@ -14,6 +14,8 @@ import java.util.Set;
  */
 public class Bot {
     
+    boolean hasMovedOutside = false;
+    
     static int BLACK = 0;
     static int WHITE = 1;
     static int RED = 2;
@@ -23,6 +25,7 @@ public class Bot {
     Random random;
     Point2D position;
     boolean seed;
+    boolean innerEdgeBot = false;
     int[][] img;
     int seqNum;
     int s;
@@ -66,6 +69,15 @@ public class Bot {
         DESIRED_DISTANCE = bSize+1;
     }
     
+    public void setImage(int[][] img)
+    {
+        this.img = new int[img.length][];
+        for(int i = 0; i < img.length; i++)
+        {
+            this.img[i] = img[i].clone();
+        }
+    }
+    
     final int DISTANCE_MAX = Integer.MAX_VALUE;
     int DESIRED_DISTANCE;
     final double moveIncrement = 1;
@@ -81,23 +93,6 @@ public class Bot {
             if(dist < current && neighbor.stationary)
             {
                 current = dist;
-            }
-        }
-        
-        if(current != DISTANCE_MAX)
-        {
-            int startX = (int)(position.getX()-15);
-            int startY = (int)(position.getY()-15);
-            for(int i = startX; i < startX+15; i++)
-            {
-                for(int j = startY; j < startY+15; j++)
-                {
-                    double dist = position.distance(i, j)+bSize/2;
-                    if(valAt(j,i) == RED && dist < current)
-                    {
-                        current = dist;
-                    }
-                }
             }
         }
         
@@ -161,15 +156,19 @@ public class Bot {
             {
                 if(IO.measuredDistance(Bot.this,neighbor) < G)
                 {
-                    if(neighbor.gradientValue < gradientValue 
-//                       && neighbor.stationary
-                      )
+                    if(neighbor.gradientValue < gradientValue &&
+                       neighbor.stationary
+//                       && !(state == State.WAIT_TO_MOVE && neighbor.state == state.JOINED_SHAPE && !neighbor.seed)
+                       )
                     {
                         gradientValue = neighbor.gradientValue;
                     }
                 }
             }
-            gradientValue += 1;
+            if(!innerEdgeBot)
+            {
+                gradientValue += 1;
+            }
             if(gradientValue != oldGradient)
             {
                 modified = true;
@@ -380,7 +379,9 @@ public class Bot {
                         for(Bot bot : neighbors)
                         {
                             if(gradientValue == bot.gradientValue && 
-                               id <= bot.id)
+                               id <= bot.id
+//                               && bot.state != State.JOINED_SHAPE
+                               )
                             {
                                 condition = false;
                                 break;
@@ -425,7 +426,17 @@ public class Bot {
 //                    System.out.println("JOINED SHAPE 1");
                     state = State.JOINED_SHAPE;
                 }
-                if(gradientValue <= IO.closestNeighbor(Bot.this).gradientValue)
+                else if(val == RED)
+                {
+                    innerEdgeBot = true;
+                    state = State.JOINED_SHAPE;
+                }
+                
+                Bot closestBot = IO.closestNeighbor(Bot.this);
+                if(gradientValue <= closestBot.gradientValue
+                   && closestBot.stationary
+//                   && !closestBot.innerEdgeBot
+                   )
                 {
 //                    System.out.println("JOINED SHAPE 2");
                     state = State.JOINED_SHAPE;

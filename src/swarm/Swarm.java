@@ -228,9 +228,8 @@ public class Swarm extends javax.swing.JFrame {
     int actInc;
     int actNum;
     boolean spawned = false;
-    String SHAPE_FILE;
+    String shapeFile;
     boolean drawShape;
-    int numBots;
     Timer drawTimer;
         
     public void restart()
@@ -241,13 +240,14 @@ public class Swarm extends javax.swing.JFrame {
         actNum = 0;
     }
     
+    int[][] img;
+        
     class SimPanel extends JPanel
     {
         int RAND_SEED = 20;
         Random random;
         
         int botSize;
-        int[][] img;
         double MAX_GRADIENT;
         int s;
         
@@ -259,10 +259,9 @@ public class Swarm extends javax.swing.JFrame {
             super();
             
             //DEMO 1 holey object
-            SHAPE_FILE = "src/holes-colored.bmp";
-            drawShape = true;
+            shapeFile = "src/holes-colored.bmp";
+            drawShape = false;
             MAX_GRADIENT = 50;
-            numBots = (int)Math.pow(20,2);
             
             //DEMO 2 draw R
 //            SHAPE_FILE = "src/R.bmp";
@@ -294,6 +293,8 @@ public class Swarm extends javax.swing.JFrame {
             drawTimer.start();
         }
         
+        boolean checkAllHaveLeftCluster = true;
+        boolean allHaveMoved;
         ActionListener taskPerformer = new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 for(int i = 0; i < actInc; i++)
@@ -302,6 +303,40 @@ public class Swarm extends javax.swing.JFrame {
                     actNum += 1;
                 }
                 actNumber.setText(actNum+"");
+                
+//                if(checkAllHaveLeftCluster)
+//                {
+//                    allHaveMoved = true;
+//                    for(Bot bot : IO.bots)
+//                    {
+//                        if(!bot.hasMovedOutside && 
+//                           bot.position.getX() > 0 &&
+//                           bot.position.getY() > 0)
+//                        {
+//                            bot.hasMovedOutside = true;
+//                        }
+//                    }
+//                    for(Bot bot : IO.bots)
+//                    {
+//                        if(!bot.hasMovedOutside && !bot.seed)
+//                        {
+//                            allHaveMoved = false;
+//                            break;
+//                        }
+//                    }
+//                    if(allHaveMoved && IO.bots.size() > 0)
+//                    {
+//                        checkAllHaveLeftCluster = false;
+//                        img = readShape("src/partitions2.bmp", 2,2);
+//                        for(Bot bot : IO.bots)
+//                        {
+//                            if(!bot.stationary)
+//                            {
+//                                bot.setImage(img);
+//                            }
+//                        }
+//                    }
+//                }
                 repaint();
             }
         };
@@ -323,23 +358,21 @@ public class Swarm extends javax.swing.JFrame {
                 botSize = 5*s;
                 actInc = 10;
                 
-                int wBots = 11;
-                int hBots = 11;
+                int wBots = 15;
+                int hBots = 15;
                 int w = botSize*wBots;
                 int h = botSize*hBots;
                 
                 int x = sx-botSize-(wBots-1)*botSize;
                 int y = sy+botSize-(hBots-1)*botSize;
                 
-                img = readShape(s,s);
+                img = readShape(shapeFile, s,s);
                 setSeed(sx,sy,s);
                 packSpawnInArea(sx, sy+botSize, x, y, w, h, img, s);
                 
-                int i = 0;
-                for(Bot bot : IO.bots)
+                for(int i = 0; i < IO.bots.size(); i++)
                 {
-                    bot.seqNum = i;
-                    i += 1;
+                    IO.bots.get(i).seqNum = i;
                 }
                 spawned = true;
             }
@@ -362,12 +395,16 @@ public class Swarm extends javax.swing.JFrame {
                 {
                     g.setColor(Color.green);
                 }
+//                else if(bot.innerEdgeBot)
+//                {
+//                    g.setColor(Color.green);
+//                }
                 else
                 {
 //                    g.setColor(stateColors[bot.state.ordinal()]);
-//                    g.setColor(gradientColors[bot.gradientValue]);
-                    int c = (int)((bot.gradientValue/(MAX_GRADIENT+1))*255);
-                    g.setColor(new Color(0,0,255));
+                    g.setColor(gradientColors[bot.gradientValue]);
+//                    int c = (int)((bot.gradientValue/(MAX_GRADIENT+1))*255);
+//                    g.setColor(new Color(0,0,255));
                 }
                 
                 if(bot.state == State.MOVE_WHILE_INSIDE)
@@ -509,84 +546,85 @@ public class Swarm extends javax.swing.JFrame {
                 }
             }
         }
-        
-        //reads shape from file as bufferedimage, stored as int[][]
-        //image can be scaled by sx/sy
-        //image can be translated by tx/ty
-        //array is 0 for black, 1 for white
-        public int[][] readShape(double sx, double sy)
-        {
-            BufferedImage image = null;
-            try
-            {
-                image = ImageIO.read(new File(SHAPE_FILE));
-                image = scale(image,sx,sy);
-            }
-            catch(Exception e)
-            {
-                e.printStackTrace();
-            }
-            int[][] shape = new int[image.getHeight()][image.getWidth()];
-            for(int i = 0; i < image.getHeight(); i++)
-            {
-                for(int j = 0; j < image.getWidth(); j++)
-                {
-                    shape[i][j] = WHITE;
-                }
-            }
-            
-            //converting from bufferedimage to int[][]
-            for(int i = 0; i < image.getHeight(); i++)
-            {
-                for(int j = 0; j < image.getWidth(); j++)
-                {
-                    Color c = convertToColor(image.getRGB(i, j));
-                    if(c.equals(Color.black))
-                    {
-                        shape[j][i] = BLACK;
-                    }
-                    else if(c.getRed()>c.getGreen())
-                    {
-                        shape[j][i] = RED;
-                    }
-                }
-            }
-            return shape;
-        }
-        
-        //scales image by a certain amount
-        //http://stackoverflow.com/questions/4216123/how-to-scale-a-bufferedimage
-        public BufferedImage scale(BufferedImage before, double sx, double sy)
-        {
-            int w = before.getWidth();
-            int h = before.getHeight();
-            BufferedImage after = new BufferedImage((int)(w*sx), (int)(h*sy), BufferedImage.TYPE_INT_ARGB);
-            for(int i = 0; i < w; i++)
-            {
-                for(int j = 0; j < h; j++)
-                {
-                    after.setRGB(i, j, convertToRGB(Color.white));
-                }
-            }
-            AffineTransform at = new AffineTransform();
-            at.scale(sx, sy);
-            AffineTransformOp scaleOp = 
-               new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
-            after = scaleOp.filter(before, after);
-            return after;
-        }
-        
-        public int convertToRGB(Color c)
-        {
-            return ((c.getRed()&0x0ff)<<16)|((c.getGreen()&0x0ff)<<8)|(c.getBlue()&0x0ff);
-        }
-        
-        public Color convertToColor(int c)
-        {
-            return new Color(c);
-        }
     }
     
+        
+    //scales image by a certain amount
+    //http://stackoverflow.com/questions/4216123/how-to-scale-a-bufferedimage
+    public BufferedImage scale(BufferedImage before, double sx, double sy)
+    {
+        int w = before.getWidth();
+        int h = before.getHeight();
+        BufferedImage after = new BufferedImage((int)(w*sx), (int)(h*sy), BufferedImage.TYPE_INT_ARGB);
+        for(int i = 0; i < w; i++)
+        {
+            for(int j = 0; j < h; j++)
+            {
+                after.setRGB(i, j, convertToRGB(Color.white));
+            }
+        }
+        AffineTransform at = new AffineTransform();
+        at.scale(sx, sy);
+        AffineTransformOp scaleOp = 
+           new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
+        after = scaleOp.filter(before, after);
+        return after;
+    }
+
+    public int convertToRGB(Color c)
+    {
+        return ((c.getRed()&0x0ff)<<16)|((c.getGreen()&0x0ff)<<8)|(c.getBlue()&0x0ff);
+    }
+
+    public Color convertToColor(int c)
+    {
+        return new Color(c);
+    }
+
+    //reads shape from file as bufferedimage, stored as int[][]
+    //image can be scaled by sx/sy
+    //image can be translated by tx/ty
+    //array is 0 for black, 1 for white
+    public int[][] readShape(String shapeFile, double sx, double sy)
+    {
+        BufferedImage image = null;
+        try
+        {
+            image = ImageIO.read(new File(shapeFile));
+            image = scale(image,sx,sy);
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+        int[][] shape = new int[image.getHeight()][image.getWidth()];
+        for(int i = 0; i < image.getHeight(); i++)
+        {
+            for(int j = 0; j < image.getWidth(); j++)
+            {
+                shape[i][j] = WHITE;
+            }
+        }
+
+        //converting from bufferedimage to int[][]
+        for(int i = 0; i < image.getHeight(); i++)
+        {
+            for(int j = 0; j < image.getWidth(); j++)
+            {
+                Color c = convertToColor(image.getRGB(i, j));
+                if(c.equals(Color.black))
+                {
+                    shape[j][i] = BLACK;
+                }
+                else if(c.getRed()>c.getGreen())
+                {
+                    shape[j][i] = RED;
+                }
+            }
+        }
+        return shape;
+    }
+        
     /**
      * @param args the command line arguments
      */
