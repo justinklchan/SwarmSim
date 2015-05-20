@@ -1,4 +1,4 @@
-package swarm;
+package holes;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -259,9 +259,9 @@ public class Swarm extends javax.swing.JFrame {
             super();
             
             //DEMO 1 holey object
-            shapeFile = "src/holes-colored.bmp";
-            drawShape = true;
-            MAX_GRADIENT = 50;
+            shapeFile = "src/holes-working.bmp";
+            drawShape = false;
+            MAX_GRADIENT = 17;
             
             //DEMO 2 draw R
 //            SHAPE_FILE = "src/R.bmp";

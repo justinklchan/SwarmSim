@@ -1,4 +1,4 @@
-package swarm;
+package frenchFlag;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ public class IO {
         {
             double dist = botCoords.get(b).distanceSq(coords);
             if(dist < neighborDistSquared &&
-               dist > epsilon)
+               dist > epsilon && b.clusterID == bot.clusterID)
             {
                 neighbors.add(b);
             }
