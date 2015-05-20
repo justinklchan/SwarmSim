@@ -260,7 +260,7 @@ public class Swarm extends javax.swing.JFrame {
             
             //DEMO 1 holey object
             shapeFile = "src/holes-colored.bmp";
-            drawShape = false;
+            drawShape = true;
             MAX_GRADIENT = 50;
             
             //DEMO 2 draw R
@@ -303,40 +303,6 @@ public class Swarm extends javax.swing.JFrame {
                     actNum += 1;
                 }
                 actNumber.setText(actNum+"");
-                
-//                if(checkAllHaveLeftCluster)
-//                {
-//                    allHaveMoved = true;
-//                    for(Bot bot : IO.bots)
-//                    {
-//                        if(!bot.hasMovedOutside && 
-//                           bot.position.getX() > 0 &&
-//                           bot.position.getY() > 0)
-//                        {
-//                            bot.hasMovedOutside = true;
-//                        }
-//                    }
-//                    for(Bot bot : IO.bots)
-//                    {
-//                        if(!bot.hasMovedOutside && !bot.seed)
-//                        {
-//                            allHaveMoved = false;
-//                            break;
-//                        }
-//                    }
-//                    if(allHaveMoved && IO.bots.size() > 0)
-//                    {
-//                        checkAllHaveLeftCluster = false;
-//                        img = readShape("src/partitions2.bmp", 2,2);
-//                        for(Bot bot : IO.bots)
-//                        {
-//                            if(!bot.stationary)
-//                            {
-//                                bot.setImage(img);
-//                            }
-//                        }
-//                    }
-//                }
                 repaint();
             }
         };
@@ -395,26 +361,28 @@ public class Swarm extends javax.swing.JFrame {
                 {
                     g.setColor(Color.green);
                 }
-//                else if(bot.innerEdgeBot)
-//                {
-//                    g.setColor(Color.green);
-//                }
+                else if(bot.state != State.JOINED_SHAPE)
+                {
+                    int c = (int)((bot.gradientValue/(MAX_GRADIENT+1))*255);
+                    g.setColor(new Color(c,0,0));
+                }
                 else
                 {
 //                    g.setColor(stateColors[bot.state.ordinal()]);
-                    g.setColor(gradientColors[bot.gradientValue]);
-//                    int c = (int)((bot.gradientValue/(MAX_GRADIENT+1))*255);
-//                    g.setColor(new Color(0,0,255));
+//                    g.setColor(gradientColors[bot.gradientValue]);
+                    int c = (int)((bot.gradientValue/(MAX_GRADIENT+1))*255);
+                    g.setColor(new Color(0,c,0));
                 }
                 
-                if(bot.state == State.MOVE_WHILE_INSIDE)
+                if(bot.state == State.JOINED_SHAPE)
                 {
-                    g.drawRect((int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY(), botSize, botSize);
+                    g.fillRect((int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY(), botSize, botSize);
                 }
                 else
                 {
-                    g.drawOval((int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY(), botSize, botSize);
+                    g.fillOval((int)IO.graphicsCoords.get(bot).getX(), (int)IO.graphicsCoords.get(bot).getY(), botSize, botSize);
                 }
+                g.setColor(Color.white);
                 g.drawString(bot.gradientValue+"", (int)IO.graphicsCoords.get(bot).getX()+2, 
                              (int)IO.graphicsCoords.get(bot).getY()+7);
             }
